@@ -15,7 +15,7 @@
 
 var express = require('express');
 var router = express.Router();
-var authModel = require('../../../models/auth.js');
+var authModel = require('../model/auth.js');
 
 router.use(
     function(req, res, next) {

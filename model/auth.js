@@ -1,7 +1,7 @@
 var crypto = require('crypto');
 var mysql = require('mysql');
 var jwt = require('jsonwebtoken');
-var credentials = require('../auth/modules/auth/config.json');
+var credentials = require('../config/config.json');
 var tokenEncodeKey = credentials.jwtSigningKey;
 
 var DEFAULT_EXPIRY = 7200;
