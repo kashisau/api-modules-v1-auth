@@ -1,0 +1,16 @@
+{
+  "name": "auth-api-module",
+  "version": "0.0.5",
+  "description": "The authentication module for Kashi's website API.",
+  "author": "Kashi Samaraweera <kashi@kashis.com.au>",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "crypto": "*",
+    "mysql": "*",
+    "jsonwebtoken": "*"
+  },
+  "license": "MIT"
+}
