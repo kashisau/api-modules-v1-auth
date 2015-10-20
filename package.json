@@ -1,5 +1,5 @@
 {
-  "name": "auth-api-module",
+  "name": "website-api-module-auth",
   "version": "0.0.5",
   "description": "The authentication module for Kashi's website API.",
   "author": "Kashi Samaraweera <kashi@kashis.com.au>",
