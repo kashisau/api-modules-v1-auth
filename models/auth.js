@@ -134,7 +134,11 @@ authModel.validateApiKey = function(apiKey) {
  * Validates a JavaScript Web Token to check for any evidence of tampering or
  * data manipulation. This method has no return value however will throw one of
  * several errors if there is an issue with the supplied token.
- * @param string jwtToken   The JWT, in its portable string format.
+ * @param {string} jwtToken   The JWT, in its portable string format.
+ * @throws Error    Thrown with the error name "non_string_token" if the token
+ *                  supplied could not be recognised as a string.
+ * @throws Error    Thrown with the error name "invalid_token" if the token did
+ *                  not pass validation.
  */
 authModel.validateToken = function(jwtToken) {
     var tokenError = new Error(),
@@ -148,6 +152,18 @@ authModel.validateToken = function(jwtToken) {
     }
     
     tokenVerification = jwt.verify(jwtToken, tokenEncodeKey);
-
 };
+
+/**
+ * Takes a JWT token as a string and decodes its contents. This does NOT verify
+ * the token for validity.
+ * @param {string} jwtToken The JWT token (in its entirety) that should be
+ *                          decoded.
+ * @return {*}  Returns the JSON payload of the web token.
+ */
+authModel.decodeToken = function(jwtToken) {
+    var payload = jwt.decode(jwtToken);
+    return payload;
+};
+
 module.exports = authModel;

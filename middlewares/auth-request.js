@@ -44,7 +44,10 @@ router.use(
 
             return next(authTokenValidationError);
         }
-        
+
+        req.authToken = authToken;
+        req.authTokenPayload = authModel.decodeToken(authToken);
+
         next();
     }
 );
