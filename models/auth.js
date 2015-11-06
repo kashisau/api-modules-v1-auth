@@ -33,14 +33,16 @@ authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
         expiryTime = Date.now() + expiry * 1000;
 
 
-    if (apiKey !== undefined)
+    if (apiKey !== undefined) {
+        authModel.validateApiKeySyntax(apiKey);
         authModel.validateApiKey(
             apiKey, apiKeySecret,
-            function(err, result) {
+            function (err, result) {
                 if (err) return callback(err);
                 accessLevel = result.accessLevel;
             }
         );
+    }
     
     var jwtString = jwt.sign(
         {
@@ -74,12 +76,12 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
     conn.connect();
     conn.query(
         [
-            'SELECT api_key.key',
+            'SELECT api_key.key, api_key.secret',
             'FROM api_key',
             'WHERE api_key.key = ?',
             'AND status = "ACTIVE"'
         ].join(" "),
-        [apiKey, apiKeySecret],
+        [apiKey],
         function(err, rows, fields) {
             if (err) return callback(err);
             if (rows.length === 0) {
@@ -113,7 +115,7 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
  * @throws {Error}  Throws an error with name "api_key_malformed" if the API
  *                  key supplied is not syntactically correct.
  */
-authModel.validateApiKey = function(apiKey) {
+authModel.validateApiKeySyntax = function(apiKey) {
     if (apiKey === undefined 
         || !apiKey)
         return;

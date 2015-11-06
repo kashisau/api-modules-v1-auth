@@ -10,7 +10,12 @@
   "dependencies": {
     "crypto": "*",
     "mysql": "*",
-    "jsonwebtoken": "*"
+    "jsonwebtoken": "*",
+    "mocha": "*",
+    "should": "*"
+  },
+  "scripts": {
+    "test": "node_modules/.bin/mocha -w"
   },
   "license": "MIT"
 }

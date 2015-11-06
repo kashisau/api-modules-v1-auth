@@ -6,5 +6,14 @@
     "port" : 3306,
     "database" : "db_name"
   },
-  "jwtSigningKey": "<The secret key by which the JWT token is signed & verified.>"
+  "jwtSigningKey": "<The secret key by which the JWT token is signed & verified.>",
+  "testAccounts": {
+    "accessLevel1": {
+      "apiKey": "<API key (conforming to syntax)>"
+    },
+    "accessLevel2": {
+      "apiKey": "<API key (conforming to syntax)>",
+      "apiKeySecret": "<Corresponding secret key>"
+    }
+  }
 }
