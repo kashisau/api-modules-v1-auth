@@ -31,7 +31,8 @@ describe('Authentication model', function() {
         },
         dbCredentials = require('../config/config.json').database;
 
-    describe("Authentication database connectivity", function (done) {
+    before(function (done) {
+        this.timeout(5000);
         require('./model/before-mysql-test.js')(testAccount, dbCredentials, done);
     });
 
@@ -47,7 +48,7 @@ describe('Authentication model', function() {
         require('./model/token-validation.js')(authModel, testAccount, done);
     });
 
-    describe("Database testing cleanup", function (done) {
+    after(function (done) {
         require('./model/after-mysql-test.js')(testAccount, dbCredentials, done);
     });
 });
