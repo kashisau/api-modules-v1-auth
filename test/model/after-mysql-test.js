@@ -1,4 +1,14 @@
 'use strict';
+/**
+ * Authentication model - MySql after testing
+ *
+ * Removes any temporary API testing accounts established during the Before
+ * MySQL testing phase. The API test account credentials supplied must match
+ * those given to the Before MySQL testing suite as this test verifies that one
+ * (and only one) row is removed from the API user database.
+ *
+ * @author Kashi Samaraweera <kashi@kashis.com.au>
+ */
 module.exports = function(apiTestAccount, dbCredentials, doneCallback) {
     var mysql = require('mysql'),
         conn = mysql.createConnection(dbCredentials),

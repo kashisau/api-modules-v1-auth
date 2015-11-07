@@ -1,4 +1,15 @@
 'use strict';
+/**
+ * Authentication model - Authentication token creation testing
+ *
+ * This is a basic test suite that will create a series of authentication
+ * tokens with varying levels of access, based on the supplied API key and
+ * corresponding secret key. The supplied API key and corresponding secret key
+ * must be valid in order for this test suite to work (typically established in
+ * the auth-model test runner.
+ *
+ * @author Kashi Samaraweera <kashi@kashis.com.au>
+ */
 module.exports = function(authModel, apiTestAccount, doneCallback) {
     var should = require('should');
 

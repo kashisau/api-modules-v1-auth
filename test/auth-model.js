@@ -7,7 +7,7 @@
  * credentials stored in the config.json file for this API module).
  *
  * The first test establishes database connectivity, followed by the actual
- * token creation as well as edge cases, and finally the testing data is
+ * token creation as well as edge cases, and finally, the testing data is
  * removed from the database.
  *
  * @author Kashi Samaraweera <kashi@kashis.com.au>
@@ -17,7 +17,11 @@ describe('Authentication model', function() {
     var rnd = function(s) {
             s = s || "";
             return (s.length < 25)?
-                rnd(s + String.fromCharCode("a".charCodeAt(0) + ~~(Math.random() * 26)))
+                rnd(
+                    s
+                    + String.fromCharCode(
+                        "a".charCodeAt(0) + ~~(Math.random() * 26))
+                )
                 : s
         },
         authModel = require('../models/auth.js'),
@@ -27,7 +31,7 @@ describe('Authentication model', function() {
         },
         dbCredentials = require('../config/config.json').database;
 
-    describe("Authentication server connectivity", function (done) {
+    describe("Authentication database connectivity", function (done) {
         require('./model/before-mysql-test.js')(testAccount, dbCredentials, done);
     });
 

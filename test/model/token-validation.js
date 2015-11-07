@@ -1,4 +1,16 @@
 'use strict';
+/**
+ * Authentication model - Authentication token validation testing
+ *
+ * This series of tests will check that JWT tokens issued by the Authentication
+ * model are correctly verified or disputed. Each of the AccessLevels are
+ * tested for both validity and invalidity (where the authentication token
+ * has been modified) so there are assertions of both errors NOT being thrown
+ * and (in the case where the token has been modified) errors being thrown
+ * during validation.
+ *
+ * @author Kashi Samaraweera <kashi@kashis.com.au>
+ */
 module.exports = function(authModel, apiTestAccount, doneCallback) {
     var should = require('should');
 

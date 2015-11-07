@@ -1,4 +1,15 @@
 'use strict';
+/**
+ * Authentication model - Authentication token invalid creation testing
+ *
+ * These tests are designed to throw errors from the Authentication model in
+ * predictable ways. Each test verifies that the correct error is thrown for
+ * the given situation. In order for these tests to work, the supplied API key
+ * (contained in apiTestAccount) must be valid. These are usually established
+ * within the auth-model test runner.
+ *
+ * @author Kashi Samaraweera <kashi@kashis.com.au>
+ */
 module.exports = function(authModel, apiTestAccount, doneCallback) {
     var should = require('should');
 
