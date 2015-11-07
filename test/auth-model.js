@@ -14,25 +14,36 @@
  */
 describe('Authentication model', function() {
 
-    var rnd = function(s) {
-            s = s || "";
-            return (s.length < 25)?
-                rnd(
-                    s
-                    + String.fromCharCode(
-                        "a".charCodeAt(0) + ~~(Math.random() * 26))
-                )
-                : s
+    var rnd = function(s, len) {
+        // Bit of code golf, (because it always helps to harden one's
+        // knowledge of functional behaviour. Also, I'm technically on a
+        // holiday, so golf seems appropriate.)
+        // Target length: try arg0 for valid int, then arg1, or default 25
+        len = +s || +len || 25;
+        // String so far: take the given string in arg0, or create one
+        s = isNaN(+s)? s || "" : "";
+        // Is the string the desired length yet?
+        return (s.length < len)?
+            // No - enter new stack frame with a random character appended
+            rnd(
+                s + String.fromCharCode(
+                    // Find our ASCII "a", and add a random offset 0-25
+                    // where we have a random number [0,26) bitwise floored
+                    "a".charCodeAt(0) + ~~(Math.random() * 26)),
+                // Pass on the target length information
+                len
+            )
+            // Yes - return the resultant string and fly up the stack
+            : s
         },
         authModel = require('../models/auth.js'),
         testAccount = {
             key: rnd(),
             secret: rnd()
         },
-        dbCredentials = require('../config/config.json').database;
+        dbCredentials = require('../config/config.json').databaseTesting;
 
     before(function (done) {
-        this.timeout(5000);
         require('./model/before-mysql-test.js')(testAccount, dbCredentials, done);
     });
 
@@ -46,6 +57,10 @@ describe('Authentication model', function() {
 
     describe("Token validation with various AccessLevels", function (done) {
         require('./model/token-validation.js')(authModel, testAccount, done);
+    });
+
+    describe("Error reporting with invalid JWT tokens", function (done) {
+        require('./model/token-validation-errors.js')(authModel, testAccount, done);
     });
 
     after(function (done) {
