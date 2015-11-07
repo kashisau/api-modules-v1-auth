@@ -34,7 +34,11 @@ authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
 
 
     if (apiKey !== undefined) {
-        authModel.validateApiKeySyntax(apiKey);
+        try {
+            authModel.validateApiKeySyntax(apiKey);
+        } catch(err) {
+            return callback(err);
+        }
         authModel.validateApiKey(
             apiKey, apiKeySecret,
             function (err, result) {
@@ -102,7 +106,7 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
 
             if (rows.length === 0) {
                 var noResultsError = new Error("There were zero rows" +
-                    " matching the given API key and secret.");
+                    " matching the given API key.");
                 noResultsError.code = "api_key_invalid";
                 return callback(noResultsError);
             }
@@ -110,9 +114,15 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
             var keyData = rows.shift(),
                 accessLevel = 1;
             
-            if (apiKeySecret !== undefined
-                && keyData.secret === apiKeySecret)
+            if (apiKeySecret !== undefined) {
+                if (keyData.secret !== apiKeySecret) {
+                    var keyMismatchError = new Error("There was a mismatch" +
+                        " between the API key secret.");
+                    keyMismatchError.code = "api_key_secret_mismatch";
+                    return callback(keyMismatchError);
+                }
                 accessLevel = 2;
+            }
 
             return callback(undefined, { accessLevel: accessLevel });
         }
@@ -144,7 +154,7 @@ authModel.validateApiKeySyntax = function(apiKey) {
         if (/[a-zA-Z0-9]*/gi)
             return escapedKey;
 
-    keyError.name = "key_malformed";
+    keyError.code = "api_key_malformed";
     throw keyError;
 };
 
@@ -168,8 +178,16 @@ authModel.validateToken = function(jwtToken) {
         tokenError.name = "non_string_token";
         throw tokenError;
     }
-    
-    tokenVerification = jwt.verify(jwtToken, tokenEncodeKey);
+
+    try {
+        tokenVerification = jwt.verify(jwtToken, tokenEncodeKey);
+    } catch (err) {
+        if (err.name === "JsonWebTokenError") {
+            var validationError = new Error("The JWT string is invalid.");
+            validationError.code = "auth_token_invalid";
+            throw validationError;
+        }
+    }
 };
 
 /**

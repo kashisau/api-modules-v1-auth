@@ -1,70 +1,49 @@
 'use strict';
-
+/**
+ * Authentication model - Token creation
+ *
+ * This test suite checks that the central database is accessible and creates a
+ * series of authentication tokens with the available AccessLevels (using
+ * credentials stored in the config.json file for this API module).
+ *
+ * The first test establishes database connectivity, followed by the actual
+ * token creation as well as edge cases, and finally the testing data is
+ * removed from the database.
+ *
+ * @author Kashi Samaraweera <kashi@kashis.com.au>
+ */
 describe('Authentication model', function() {
 
-    var authModel = require('../models/auth.js'),
-        testingAccounts = require('../config/config.json').testAccounts;
+    var rnd = function(s) {
+            s = s || "";
+            return (s.length < 25)?
+                rnd(s + String.fromCharCode("a".charCodeAt(0) + ~~(Math.random() * 26)))
+                : s
+        },
+        authModel = require('../models/auth.js'),
+        testAccount = {
+            key: rnd(),
+            secret: rnd()
+        },
+        dbCredentials = require('../config/config.json').database;
 
-    describe("Authentication server connectivity", function() {
-        it("Have access to the authentication server", function(done) {
-            var mysql = require('mysql'),
-                mysqlCredentials = require('../config/config.json').database,
-                conn = mysql.createConnection(mysqlCredentials),
-                should = require('should');
-
-            conn.connect(function(err) {
-                should.not.exist(err);
-                conn.end();
-                done();
-            });
-        });
+    describe("Authentication server connectivity", function (done) {
+        require('./model/before-mysql-test.js')(testAccount, dbCredentials, done);
     });
 
-    describe("Token creation with various AccessLevels", function() {
-        it("Create a JWT token with AccessLevel 0 (anonymous)", function (done) {
-            var jwtString;
+    describe("Token creation with various AccessLevels", function (done) {
+        require('./model/token-creation.js')(authModel, testAccount, done);
+    });
 
-            jwtString = authModel.createToken(
-                undefined,
-                undefined,
-                undefined,
-                function (err, authToken) {
-                    authToken.should.be.a.string;
-                    done();
-                }
-            );
-        });
+    describe("Error reporting with invalid credentials", function (done) {
+        require('./model/invalid-credentials.js')(authModel, testAccount, done);
+    });
 
-        it("Create a JWT token with AccessLevel 1", function (done) {
-            var jwtString;
+    describe("Token validation with various AccessLevels", function (done) {
+        require('./model/token-validation.js')(authModel, testAccount, done);
+    });
 
-            jwtString = authModel.createToken(
-                testingAccounts.accessLevel1.apiKey,
-                undefined,
-                undefined,
-                function(err, authToken) {
-                    authToken.should.be.a.string;
-                    var authTokenPayload = authModel.decodeToken(authToken);
-                    authTokenPayload.accessLevel.should.equal(1);
-                    done();
-                }
-            )
-        });
-
-        it("Create a JWT Token with AccessLevel 2", function (done) {
-            var jwtString;
-
-            jwtString = authModel.createToken(
-                testingAccounts.accessLevel2.apiKey,
-                testingAccounts.accessLevel2.apiKeySecret,
-                undefined,
-                function(err, authToken) {
-                    authToken.should.be.a.string;
-                    var authTokenPayload = authModel.decodeToken(authToken);
-                    authTokenPayload.accessLevel.should.equal(2);
-                    done();
-                }
-            );
-        });
+    describe("Database testing cleanup", function (done) {
+        require('./model/after-mysql-test.js')(testAccount, dbCredentials, done);
     });
 });
