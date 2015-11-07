@@ -40,22 +40,35 @@ authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
             function (err, result) {
                 if (err) return callback(err);
                 accessLevel = result.accessLevel;
+                var jwtString = jwt.sign(
+                    {
+                        accessLevel: accessLevel,
+                        aud: TOKEN_AUDIENCE,
+                        iat: currentTime,
+                        exp: expiryTime,
+                        apiKey: apiKey
+                    },
+                    tokenEncodeKey
+                );
+
+                callback(undefined, jwtString);
             }
         );
+    } else {
+
+        var jwtString = jwt.sign(
+            {
+                accessLevel: accessLevel,
+                aud: TOKEN_AUDIENCE,
+                iat: currentTime,
+                exp: expiryTime,
+                apiKey: apiKey
+            },
+            tokenEncodeKey
+        );
+
+        callback(undefined, jwtString);
     }
-    
-    var jwtString = jwt.sign(
-        {
-            accessLevel: accessLevel,
-            aud: TOKEN_AUDIENCE,
-            iat: currentTime,
-            exp: expiryTime,
-            apiKey: apiKey
-        },
-        tokenEncodeKey
-    );
-    
-    callback(undefined, jwtString);
 };
 
 /**
@@ -69,11 +82,12 @@ authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
  *                              token of accessLevel 2 will be issued.
  * @param {function} callback   A callback function that accepts the standard
  *                              params err, result.
+ * @throws Error    Thrown if the api key or api key secret does not match any
+ *                  of the database entries.
  */
 authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
     var conn = mysql.createConnection(credentials.database);
 
-    conn.connect();
     conn.query(
         [
             'SELECT api_key.key, api_key.secret',
@@ -83,7 +97,9 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
         ].join(" "),
         [apiKey],
         function(err, rows, fields) {
+            conn.end();
             if (err) return callback(err);
+
             if (rows.length === 0) {
                 var noResultsError = new Error("There were zero rows" +
                     " matching the given API key and secret.");
