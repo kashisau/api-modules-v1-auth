@@ -14,10 +14,12 @@ var authModel = require('../models/auth.js');
 router
     .post('(.xml|.json)?', function(req, res, next) {
         var apiTarget = req.apiTarget,
+            apiKey = req.headers["api-key"],
+            apiKeySecret = req.headers["api-key-secret"],
             newJwt;
 
         authModel.createToken(
-            undefined, undefined,  undefined,
+            apiKey, apiKeySecret,  undefined,
             function(err, tokenString) {
                 if (err) return next(err);
                 res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8000');

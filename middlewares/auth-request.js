@@ -45,8 +45,12 @@ router.use(
             return next(authTokenValidationError);
         }
 
-        req.authToken = authToken;
-        req.authTokenPayload = authModel.decodeToken(authToken);
+        req.auth = req.auth || {};
+        
+        req.auth.token = authToken;
+        req.auth.tokenPayload = authModel.decodeToken(authToken);
+        
+        req.auth.functions = require('../models/auth-functions.js');
 
         next();
     }
