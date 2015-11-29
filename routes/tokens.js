@@ -21,7 +21,8 @@ router
         authModel.createToken(
             apiKey, apiKeySecret,  undefined,
             function(err, tokenString) {
-                if (err) return next(err);
+                if (err)
+                    return next(authError(err));
                 res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8000');
                 res.send({data: { token : tokenString }});
             }
@@ -61,6 +62,30 @@ function connect_mysql(authFile) {
     //mysql.createConnection();
 
     return {};
+}
+
+/**
+ * Wraps an error with the required details before sending it onward to the
+ * Express server. This allows the server to correctly report errors thrown by
+ * the Authentication module (with correct status codes).
+ * @param {Error} err   The error object originally thrown during an operation.
+ * @return {Error}  Returns an error correctly decorated with http status codes
+ *                  and module details.
+ */
+function authError(err) {
+    err.module = "auth";
+    switch (err.code) {
+        case "api_key_malformed": 
+            err.httpStatus = 400;
+            break;
+        case "api_key_invalid": 
+            err.httpStatus = 403;
+            break;
+        default:
+            err.httpStatus = 500;
+    }
+    
+    return err;
 }
 
 function createJwt(req) {
