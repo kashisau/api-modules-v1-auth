@@ -200,6 +200,70 @@ authModel.validateToken = function(jwtToken) {
 };
 
 /**
+ * Revokes an authentication token by adding it to the token revoction table in
+ * the database. This will raise an error if the token has already been revoked
+ * or the token's signature can not be verified (i.e. it was not issued by this
+ * server).
+ * @param {string} jwtToken The JWT in its portable string format.
+ * @param {function}    A callback function that is called once the revocation
+ *                      has been completed with the standard params err, result.
+ * @throws Error    Thrown if there is an error in the token string, has been
+ *                  tampered with or has already expired. See `validateToken`
+ *                  method for error details (these are simply bubbled up).
+ */
+authModel.revokeToken = function(jwtToken, callback) {
+
+    // Use errors from authModel (uncaught here.);        
+    authModel.validateToken(jwtToken);
+    
+    // Continues if there were no issues so far.
+    var db = new sqlite.Database(config.database.file);
+
+    db
+        .on("open", function() {
+            db.run(
+                [
+                    'INSERT INTO token_revoked',
+                    '(token, date)',
+                    'VALUES (?, ?)'
+                ].join(" "),
+                [jwtToken, Date.now()],
+                function(err) {
+                    db.close();
+                    
+                    // If there was an SQL error, throw it here.
+                    if (err !== null) {
+                        var sqlError = new Error("There was an SQL error.");
+                        sqlError.name = "auth_db_sql_error";
+                        sqlError.innerError = err;
+                        callback(sqlError);
+                        return;
+                    }
+                    
+                    // Check that we've had an affect
+                    if (this.changes !== 1) {
+                        var notRevokedError = new Error("The revocation " +
+                            "could not be added to the database.");
+                        notRevokedError.name = "auth_token_not_revoked";
+                        callback(notRevokedError);
+                        return;
+                    }
+                    
+                    callback(undefined, true);
+                }
+            )
+        })
+        .on("error", function(err) {
+            var dbError = new Error("There was an error connecting to " + 
+                "the authentication database.");
+            dbError.name = "auth_db_connection_error";
+            dbError.innerError = err;
+            callback(dbError);
+            return;
+        });
+}
+
+/**
  * Takes a JWT token as a string and decodes its contents. This does NOT verify
  * the token for validity.
  * @param {string} jwtToken The JWT token (in its entirety) that should be

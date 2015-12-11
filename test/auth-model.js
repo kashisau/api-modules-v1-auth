@@ -63,6 +63,10 @@ describe('Authentication model', function() {
         require('./model/token-validation-errors.js')(authModel, testAccount, done);
     });
 
+    describe("Token revocation integrity", function (done) {
+        require('./model/token-revocation.js')(authModel, testAccount, done);
+    });
+
     after(function (done) {
         require('./model/after-sqlite-test.js')(testAccount, dbConfig, done);
     });
