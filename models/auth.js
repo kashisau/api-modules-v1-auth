@@ -1,8 +1,8 @@
 var crypto = require('crypto');
-var mysql = require('mysql');
+var sqlite = require('sqlite3');
 var jwt = require('jsonwebtoken');
-var credentials = require('../config/config.json');
-var tokenEncodeKey = credentials.jwtSigningKey;
+var config = require('../config/config.json');
+var tokenEncodeKey = config.jwtSigningKey;
 
 var DEFAULT_EXPIRY = 7200;
 var KEY_LENGTH = 25;
@@ -90,43 +90,52 @@ authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
  *                  of the database entries.
  */
 authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
-    var conn = mysql.createConnection(credentials.database);
+    var db = new sqlite.Database(config.database.file);
 
-    conn.query(
-        [
-            'SELECT api_key.key, api_key.secret',
-            'FROM api_key',
-            'WHERE api_key.key = ?',
-            'AND status = "ACTIVE"'
-        ].join(" "),
-        [apiKey],
-        function(err, rows, fields) {
-            conn.end();
-            if (err) return callback(err);
-
-            if (rows.length === 0) {
-                var noResultsError = new Error("There were zero rows" +
-                    " matching the given API key.");
-                noResultsError.code = "api_key_invalid";
-                return callback(noResultsError);
-            }
-            // Determine the access level.
-            var keyData = rows.shift(),
-                accessLevel = 1;
-            
-            if (apiKeySecret !== undefined) {
-                if (keyData.secret !== apiKeySecret) {
-                    var keyMismatchError = new Error("There was a mismatch" +
-                        " between the API key secret.");
-                    keyMismatchError.code = "api_key_secret_mismatch";
-                    return callback(keyMismatchError);
+    db
+        .on("open", function() {
+            db.all(
+                [
+                    'SELECT key, secret',
+                    'FROM api_key',
+                    'WHERE key = ?'
+                ].join(" "),
+                [apiKey],
+                function(err, rows) {
+                    db.close();
+                    
+                    // If there was an SQL error, return here.
+                    if (err !== null) return callback(err);
+                    
+                    // Empty result set (no matching key)
+                    if (rows.length === 0) {
+                        var noResultsError = new Error("There were zero rows" +
+                            " matching the given API key.");
+                        noResultsError.code = "api_key_invalid";
+                        return callback(noResultsError);
+                    }
+                    
+                    // Determine the access level.
+                    var keyData = rows.shift(),
+                        accessLevel = 1;
+                    
+                    if (apiKeySecret !== undefined) {
+                        if (keyData.secret !== apiKeySecret) {
+                            var keyMismatchError = new Error("There was a " + "mismatch between the API key secret.");
+                            keyMismatchError.code = "api_key_secret_mismatch";
+                            return callback(keyMismatchError);
+                        }
+                        accessLevel = 2;
+                    }
+        
+                    return callback(undefined, { accessLevel: accessLevel });
                 }
-                accessLevel = 2;
-            }
-
-            return callback(undefined, { accessLevel: accessLevel });
-        }
-    );
+            )
+        })
+        .on("error", function(err) {
+            callback(err);
+            return;
+        });
 };
 
 /**

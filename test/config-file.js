@@ -24,64 +24,15 @@ describe('Config file checks', function() {
         done();
     });
 
-    describe("Contains database credentials (database)", function() {
+    describe("Contains SQLite data", function() {
         var config = require('../' + CONFIG_FILE_PATH);
 
-        it("Contains host address", function(done) {
-            config.database.host.should.be.a.string;
-            done();
-        });
-
-        it("Contains a username", function(done) {
-            config.database.user.should.be.a.string;
-            done();
-        });
-
-        it("Contains a password", function(done) {
-            config.database.password.should.be.a.string;
-            done();
-        });
-
-        it("Contains a port number", function(done) {
-            config.database.port.should.be.a.number;
-            done();
-        });
-
-        it("Contains a database name", function(done) {
-            config.database.database.should.be.a.string;
+        it("Contains sqlite databas file", function(done) {
+            config.database.file.should.be.a.string;
             done();
         });
     });
-
-    describe("Testing database credentials (databaseTesting)", function() {
-        var config = require('../' + CONFIG_FILE_PATH);
-
-        it("Contains host address", function(done) {
-            config.databaseTesting.host.should.be.a.string;
-            done();
-        });
-
-        it("Contains a username", function(done) {
-            config.databaseTesting.user.should.be.a.string;
-            done();
-        });
-
-        it("Contains a password", function(done) {
-            config.databaseTesting.password.should.be.a.string;
-            done();
-        });
-
-        it("Contains a port number", function(done) {
-            config.databaseTesting.port.should.be.a.number;
-            done();
-        });
-
-        it("Contains a database name", function(done) {
-            config.databaseTesting.database.should.be.a.string;
-            done();
-        });
-    });
-
+    
     describe("JWT signing key", function() {
         var config = require('../' + CONFIG_FILE_PATH);
 

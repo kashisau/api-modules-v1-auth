@@ -41,10 +41,10 @@ describe('Authentication model', function() {
             key: rnd(),
             secret: rnd()
         },
-        dbCredentials = require('../config/config.json').databaseTesting;
+        dbConfig = require('../config/config.json').database;
 
     before(function (done) {
-        require('./model/before-mysql-test.js')(testAccount, dbCredentials, done);
+        require('./model/before-sqlite-test.js')(testAccount, dbConfig, done);
     });
 
     describe("Token creation with various AccessLevels", function (done) {
@@ -64,6 +64,6 @@ describe('Authentication model', function() {
     });
 
     after(function (done) {
-        require('./model/after-mysql-test.js')(testAccount, dbCredentials, done);
+        require('./model/after-sqlite-test.js')(testAccount, dbConfig, done);
     });
 });

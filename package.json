@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "crypto": "*",
-    "mysql": "*",
+    "sqlite3": "*",
     "jsonwebtoken": "*",
     "mocha": "*",
     "should": "*"
