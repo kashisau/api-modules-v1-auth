@@ -67,6 +67,10 @@ describe('Authentication model', function() {
         require('./model/token-revocation.js')(authModel, testAccount, done);
     });
 
+    describe("Token expiry integrity", function (done) {
+        require('./model/token-expiry.js')(authModel, testAccount, done);
+    });
+
     after(function (done) {
         require('./model/after-sqlite-test.js')(testAccount, dbConfig, done);
     });

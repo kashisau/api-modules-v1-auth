@@ -205,6 +205,18 @@ authModel.validateToken = function(jwtToken, callback) {
             return;
         }
     }
+    
+    // Check token integrity (i.e., all mandatory attributes present.)
+    var payload = authModel.decodeToken(jwtToken),
+        currentDate = Date.now();
+    
+    // Check for token expiry    
+    if (( ! payload.exp) || currentDate > payload.exp) {
+        var expiredError = new Error("This token has expired.");
+        expiredError.name = "auth_token_expired";
+        callback(expiredError);
+        return;
+    }
 
     var db = new sqlite.Database(config.database.file);
     
@@ -251,6 +263,7 @@ authModel.validateToken = function(jwtToken, callback) {
             callback(dbError);
             return;
         });
+
 };
 
 /**
