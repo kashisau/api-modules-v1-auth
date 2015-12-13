@@ -22,11 +22,11 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             function (err, authToken) {
                 authToken.should.be.a.string;
                 var authTokenPayload = authModel.decodeToken(authToken);
-                (function () {
-                    authModel.validateToken(authToken);
-                }).should.not.throw();
+                authModel.validateToken(authToken, function(err, result) {
+                    should(err).be.undefined;
+                    done();
+                });
                 authTokenPayload.accessLevel.should.equal(0);
-                done();
             }
         );
     });
@@ -41,11 +41,12 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             function (err, authToken) {
                 authToken.should.be.a.string;
                 var authTokenPayload = authModel.decodeToken(authToken);
-                (function () {
-                    authModel.validateToken(authToken);
-                }).should.not.throw();
+                authModel.validateToken(authToken, function(err, result) {
+                    should(err).be.undefined;
+                    done();
+                });
+
                 authTokenPayload.accessLevel.should.equal(1);
-                done();
             }
         )
     });
@@ -60,12 +61,12 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             function (err, authToken) {
                 authToken.should.be.a.string;
                 var authTokenPayload = authModel.decodeToken(authToken);
-                (function () {
-                    authModel.validateToken(authToken);
-                }).should.not.throw();
+                authModel.validateToken(authToken, function(err, result) {
+                    should(err).be.undefined;
+                    done();
+                    doneCallback();
+                });
                 authTokenPayload.accessLevel.should.equal(2);
-                done();
-                doneCallback();
             }
         );
     });

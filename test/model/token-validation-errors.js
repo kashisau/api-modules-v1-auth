@@ -46,12 +46,10 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 authToken[1] = rplAChar(authToken[1]);
                 authToken = authToken.join('.');
 
-                (function () {
-                    authModel.validateToken(authToken);
-                }).should.throw(
-                    Error, {code: 'auth_token_invalid'}
-                );
-                done();
+                authModel.validateToken(authToken, function(err, result) {
+                    err.name.should.equal("auth_token_invalid");
+                    done();
+                });
             }
         );
     });
@@ -72,12 +70,10 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 authToken[1] = rplAChar(authToken[1]);
                 authToken = authToken.join('.');
 
-                (function () {
-                    authModel.validateToken(authToken);
-                }).should.throw(
-                    Error, {code: 'auth_token_invalid'}
-                );
-                done();
+                authModel.validateToken(authToken, function(err, result) {
+                    err.name.should.equal("auth_token_invalid");
+                    done();
+                });
             }
         )
     });
@@ -98,13 +94,11 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 authToken[1] = rplAChar(authToken[1]);
                 authToken = authToken.join('.');
 
-                (function () {
-                    authModel.validateToken(authToken);
-                }).should.throw(
-                    Error, {code: 'auth_token_invalid'}
-                );
-                done();
-                doneCallback();
+                authModel.validateToken(authToken, function(err, result) {
+                    err.name.should.equal("auth_token_invalid");
+                    done();
+                    doneCallback();
+                });
             }
         )
     });

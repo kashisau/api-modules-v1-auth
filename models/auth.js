@@ -111,7 +111,7 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
                     if (rows.length === 0) {
                         var noResultsError = new Error("There were zero rows" +
                             " matching the given API key.");
-                        noResultsError.code = "api_key_invalid";
+                        noResultsError.name = "api_key_invalid";
                         return callback(noResultsError);
                     }
                     
@@ -122,7 +122,7 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
                     if (apiKeySecret !== undefined) {
                         if (keyData.secret !== apiKeySecret) {
                             var keyMismatchError = new Error("There was a " + "mismatch between the API key secret.");
-                            keyMismatchError.code = "api_key_secret_mismatch";
+                            keyMismatchError.name = "api_key_secret_mismatch";
                             return callback(keyMismatchError);
                         }
                         accessLevel = 2;
@@ -163,7 +163,7 @@ authModel.validateApiKeySyntax = function(apiKey) {
         if (/[a-zA-Z0-9]*/gi)
             return escapedKey;
 
-    keyError.code = "api_key_malformed";
+    keyError.name = "api_key_malformed";
     throw keyError;
 };
 
@@ -172,31 +172,85 @@ authModel.validateApiKeySyntax = function(apiKey) {
  * data manipulation. This method has no return value however will throw one of
  * several errors if there is an issue with the supplied token.
  * @param {string} jwtToken   The JWT, in its portable string format.
- * @throws Error    Thrown with the error name "non_string_token" if the token
- *                  supplied could not be recognised as a string.
- * @throws Error    Thrown with the error name "invalid_token" if the token did
- *                  not pass validation.
+ * @param {function} callback   A standard callback function with parameters
+ *                              err, result. The error supplied may be one of:
+ *                                - "non_string_token" if the token supplied
+ *                                  could not be recognised as a string.
+ *                                - "invalid_token" if the token did not pass
+ *                                  validation.
+ *                                - "auth_token_revoked" if the token has been
+ *                                  revoked.
  */
-authModel.validateToken = function(jwtToken) {
+authModel.validateToken = function(jwtToken, callback) {
     var tokenError = new Error(),
         tokenVerification;
 
+    // Check syntax
     if (typeof(jwtToken) !== "string") {
         tokenError.message = "The token provided was of type "
             + typeof(jwtToken) + " (expected string).";
         tokenError.name = "non_string_token";
-        throw tokenError;
+        callback(tokenError);
+        return;
     }
 
+    // Check JWT integrity
     try {
         tokenVerification = jwt.verify(jwtToken, tokenEncodeKey);
     } catch (err) {
         if (err.name === "JsonWebTokenError") {
             var validationError = new Error("The JWT string is invalid.");
-            validationError.code = "auth_token_invalid";
-            throw validationError;
+            validationError.name = "auth_token_invalid";
+            callback(validationError);
+            return;
         }
     }
+
+    var db = new sqlite.Database(config.database.file);
+    
+    // Check revocation
+    db
+        .on("open", function() {
+            db.all(
+                [
+                    'SELECT * FROM token_revoked',
+                    'WHERE token = ?'
+                ].join(" "),
+                [jwtToken],
+                function(err, rows) {
+                    db.close();
+                    
+                    // If there was an SQL error, throw it here.
+                    if (err !== null) {
+                        var sqlError = new Error("There was an SQL error.");
+                        sqlError.name = "auth_db_sql_error";
+                        sqlError.innerError = err;
+                        callback(sqlError);
+                        return;
+                    }
+                    
+                    // Check for matches to revoked tokens
+                    if (rows.length !== 0) {
+                        var tokenRevokedError = new Error("This auth token " +
+                            "has been previously revoked");
+                        tokenRevokedError.name = "auth_token_revoked";
+                        callback(tokenRevokedError);
+                        return;
+                    }
+
+                    callback(undefined, true);
+                    return;
+                }
+            )
+        })
+        .on("error", function(err) {
+            var dbError = new Error("There was an error connecting to " + 
+                "the authentication database.");
+            dbError.name = "auth_db_connection_error";
+            dbError.innerError = err;
+            callback(dbError);
+            return;
+        });
 };
 
 /**
@@ -213,54 +267,63 @@ authModel.validateToken = function(jwtToken) {
  */
 authModel.revokeToken = function(jwtToken, callback) {
 
-    // Use errors from authModel (uncaught here.);        
-    authModel.validateToken(jwtToken);
-    
-    // Continues if there were no issues so far.
-    var db = new sqlite.Database(config.database.file);
+    // Define a process for token revocation, to be run if token validates
+    var revokeToken = function(err, result) {
+        // Throws an error if the token was not valid.
+        if (err !== undefined) return callback(err);
 
-    db
-        .on("open", function() {
-            db.run(
-                [
-                    'INSERT INTO token_revoked',
-                    '(token, date)',
-                    'VALUES (?, ?)'
-                ].join(" "),
-                [jwtToken, Date.now()],
-                function(err) {
-                    db.close();
-                    
-                    // If there was an SQL error, throw it here.
-                    if (err !== null) {
-                        var sqlError = new Error("There was an SQL error.");
-                        sqlError.name = "auth_db_sql_error";
-                        sqlError.innerError = err;
-                        callback(sqlError);
-                        return;
+        // Continues if there were no issues so far.
+        var db = new sqlite.Database(config.database.file);
+    
+        db
+            .on("open", function() {
+                db.run(
+                    [
+                        'INSERT INTO token_revoked',
+                        '(token, date)',
+                        'VALUES (?, ?)'
+                    ].join(" "),
+                    [jwtToken, Date.now()],
+                    function(err) {
+                        db.close();
+                        
+                        // If there was an SQL error, throw it here.
+                        if (err !== null) {
+                            var sqlError = new Error("There was an SQL error.");
+                            sqlError.name = "auth_db_sql_error";
+                            sqlError.innerError = err;
+                            callback(sqlError);
+                            return;
+                        }
+                        
+                        // Check that we've had an affect
+                        if (this.changes !== 1) {
+                            var notRevokedError = new Error("The revocation " +
+                                "could not be added to the database.");
+                            notRevokedError.name = "auth_token_not_revoked";
+                            callback(notRevokedError);
+                            return;
+                        }
+                        
+                        callback(undefined, true);
                     }
-                    
-                    // Check that we've had an affect
-                    if (this.changes !== 1) {
-                        var notRevokedError = new Error("The revocation " +
-                            "could not be added to the database.");
-                        notRevokedError.name = "auth_token_not_revoked";
-                        callback(notRevokedError);
-                        return;
-                    }
-                    
-                    callback(undefined, true);
-                }
-            )
-        })
-        .on("error", function(err) {
-            var dbError = new Error("There was an error connecting to " + 
-                "the authentication database.");
-            dbError.name = "auth_db_connection_error";
-            dbError.innerError = err;
-            callback(dbError);
-            return;
-        });
+                )
+            })
+            .on("error", function(err) {
+                var dbError = new Error("There was an error connecting to " + 
+                    "the authentication database.");
+                dbError.name = "auth_db_connection_error";
+                dbError.innerError = err;
+                callback(dbError);
+                return;
+            });
+    };
+
+    // Use errors from authModel (uncaught here.);        
+    authModel.validateToken(
+        jwtToken,
+        revokeToken
+    );
 }
 
 /**

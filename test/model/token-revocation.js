@@ -18,16 +18,22 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 -1,
                 function(err, authToken) {
                     should.not.exist(err);
-                    authModel.revokeToken(authToken, function(err, result) {
-                        should(err).be.undefined;
-                        result.should.be.true;
-                        try {
-                            authModel.validateToken(authToken);
-                        } catch(err) {
-                            err.name.should.equal('auth_token_not_revoked');
-                            done();
+                    authToken.should.be.a.string;
+                    authModel.revokeToken(
+                        authToken,
+                        function(err, res) {
+                            res.should.equal(true);
+                            should(err).be.undefined;
+                            authModel.validateToken(
+                                authToken,
+                                function(err, result) {
+                                    should(err).be.an.object;
+                                    err.name.should.equal('auth_token_revoked');
+                                    done();
+                                }
+                            );
                         }
-                    });
+                    )
                 }
             )
         ).not.throw();

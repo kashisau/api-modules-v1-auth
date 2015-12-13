@@ -27,7 +27,7 @@ describe('Config file checks', function() {
     describe("Contains SQLite data", function() {
         var config = require('../' + CONFIG_FILE_PATH);
 
-        it("Contains sqlite databas file", function(done) {
+        it("Contains sqlite database file", function(done) {
             config.database.file.should.be.a.string;
             done();
         });

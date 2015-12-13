@@ -74,7 +74,7 @@ function connect_mysql(authFile) {
  */
 function authError(err) {
     err.module = "auth";
-    switch (err.code) {
+    switch (err.name) {
         case "api_key_malformed": 
             err.httpStatus = 400;
             break;
