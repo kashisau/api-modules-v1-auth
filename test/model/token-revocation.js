@@ -15,7 +15,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             authModel.createToken(
                 undefined,
                 undefined,
-                -1,
+                undefined,
                 function(err, authToken) {
                     should.not.exist(err);
                     authToken.should.be.a.string;
