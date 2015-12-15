@@ -33,26 +33,24 @@ router.use(
         }
         
         // Validate JWT
-        try {
-            authModel.validateToken(authToken);
-        } catch (jwtError) {
-            var authTokenValidationError = new Error('There was an issue ' +
-                'processing the JWT string provided.');
+        authModel.validateToken(
+            authToken,
+            function(err, resullt) {
+                if (err !== undefined) {
+                    return next(err);
+                }
 
-            authTokenValidationError.name = 'auth_token_invalid';
-            authTokenValidationError.innerError = jwtError;
-
-            return next(authTokenValidationError);
-        }
-
-        req.auth = req.auth || {};
+                req.auth = req.auth || {};
+                
+                req.auth.token = authToken;
+                req.auth.tokenPayload = authModel.decodeToken(authToken);
+                
+                req.auth.functions = require('../models/auth-functions.js');
         
-        req.auth.token = authToken;
-        req.auth.tokenPayload = authModel.decodeToken(authToken);
+                return next();
+            }
+        );
         
-        req.auth.functions = require('../models/auth-functions.js');
-
-        next();
     }
 );
 
