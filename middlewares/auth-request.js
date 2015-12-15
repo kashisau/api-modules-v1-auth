@@ -37,6 +37,7 @@ router.use(
             authToken,
             function(err, resullt) {
                 if (err !== undefined) {
+                    err.httpStatus = 401;
                     return next(err);
                 }
 
