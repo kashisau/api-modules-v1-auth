@@ -190,6 +190,7 @@ authModel.validateToken = function(jwtToken, callback) {
         tokenError.message = "The token provided was of type "
             + typeof(jwtToken) + " (expected string).";
         tokenError.name = "non_string_token";
+        tokenError.httpStatus = 422;
         callback(tokenError);
         return;
     }
@@ -201,6 +202,7 @@ authModel.validateToken = function(jwtToken, callback) {
         if (err.name === "JsonWebTokenError") {
             var validationError = new Error("The JWT string is invalid.");
             validationError.name = "auth_token_invalid";
+            validationError.httpStatus = 422;
             callback(validationError);
             return;
         }
@@ -214,6 +216,7 @@ authModel.validateToken = function(jwtToken, callback) {
     if (( ! payload.exp) || currentDate > payload.exp) {
         var expiredError = new Error("This token has expired.");
         expiredError.name = "auth_token_expired";
+        expiredError.httpStatus = 403;
         callback(expiredError);
         return;
     }
