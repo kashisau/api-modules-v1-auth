@@ -34,32 +34,37 @@ authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
 
 
     if (apiKey !== undefined) {
+
         try {
             authModel.validateApiKeySyntax(apiKey);
         } catch(err) {
             return callback(err);
         }
         authModel.validateApiKey(
-            apiKey, apiKeySecret,
-            function (err, result) {
-                if (err) return callback(err);
-                accessLevel = result.accessLevel;
-                var jwtString = jwt.sign(
-                    {
-                        accessLevel: accessLevel,
-                        aud: TOKEN_AUDIENCE,
-                        iat: currentTime,
-                        exp: expiryTime,
-                        apiKey: apiKey
-                    },
-                    tokenEncodeKey
-                );
-
-                callback(undefined, jwtString);
-            }
+            apiKey,
+            apiKeySecret,
+            validateApiKeyCallback
         );
+
     } else {
 
+        var jwtString = jwt.sign(
+            {
+                accessLevel: accessLevel,
+                aud: TOKEN_AUDIENCE,
+                iat: currentTime,
+                exp: expiryTime,
+                apiKey: apiKey
+            },
+            tokenEncodeKey
+        );
+
+        callback(undefined, jwtString);
+    }
+    
+    function validateApiKeyCallback (err, result) {
+        if (err) return callback(err);
+        accessLevel = result.accessLevel;
         var jwtString = jwt.sign(
             {
                 accessLevel: accessLevel,
@@ -101,40 +106,43 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
                     'WHERE key = ?'
                 ].join(" "),
                 [apiKey],
-                function(err, rows) {
-                    db.close();
-                    
-                    // If there was an SQL error, return here.
-                    if (err !== null) return callback(err);
-                    
-                    // Empty result set (no matching key)
-                    if (rows.length === 0) {
-                        var noResultsError = new Error("There were zero rows" +
-                            " matching the given API key.");
-                        noResultsError.name = "api_key_invalid";
-                        return callback(noResultsError);
-                    }
-                    
-                    // Determine the access level.
-                    var keyData = rows.shift(),
-                        accessLevel = 1;
-                    
-                    if (apiKeySecret !== undefined) {
-                        if (keyData.secret !== apiKeySecret) {
-                            var keyMismatchError = new Error("There was a " + "mismatch between the API key secret.");
-                            keyMismatchError.name = "api_key_secret_mismatch";
-                            return callback(keyMismatchError);
-                        }
-                        accessLevel = 2;
-                    }
-        
-                    return callback(undefined, { accessLevel: accessLevel });
-                }
+                processKeyLookupCallback
             )
         })
         .on("error", function(err) {
             return callback(err);
         });
+
+    function processKeyLookupCallback (err, rows) {
+        db.close();
+        
+        // If there was an SQL error, return here.
+        if (err !== null) return callback(err);
+        
+        // Empty result set (no matching key)
+        if (rows.length === 0) {
+            var noResultsError = new Error("There were zero rows" +
+                " matching the given API key.");
+            noResultsError.name = "api_key_invalid";
+            return callback(noResultsError);
+        }
+        
+        // Determine the access level.
+        var keyData = rows.shift(),
+            accessLevel = 1;
+        
+        if (apiKeySecret !== undefined) {
+            if (keyData.secret !== apiKeySecret) {
+                var keyMismatchError = new Error("There was a mismatch " + 
+                    "the API key secret.");
+                keyMismatchError.name = "api_key_secret_mismatch";
+                return callback(keyMismatchError);
+            }
+            accessLevel = 2;
+        }
+
+        return callback(undefined, { accessLevel: accessLevel });
+    }
 };
 
 /**
@@ -228,30 +236,7 @@ authModel.validateToken = function(jwtToken, callback) {
                     'WHERE token = ?'
                 ].join(" "),
                 [jwtToken],
-                function(err, rows) {
-                    db.close();
-                    
-                    // If there was an SQL error, throw it here.
-                    if (err !== null) {
-                        var sqlError = new Error("There was an SQL error.");
-                        sqlError.name = "auth_db_sql_error";
-                        sqlError.innerError = err;
-
-                        return callback(sqlError);
-                    }
-                    
-                    // Check for matches to revoked tokens
-                    if (rows.length !== 0) {
-                        var tokenRevokedError = new Error("This auth token " +
-                            "has been previously revoked");
-                        tokenRevokedError.name = "auth_token_revoked";
-                        tokenRevokedError.httpStatus = 403;
-
-                        return callback(tokenRevokedError);
-                    }
-
-                    return callback(undefined, true);
-                }
+                revokedTokenSelectCallback
             )
         })
         .on("error", function(err) {
@@ -262,6 +247,31 @@ authModel.validateToken = function(jwtToken, callback) {
             callback(dbError);
             return;
         });
+        
+        function revokedTokenSelectCallback (err, rows) {
+            db.close();
+            
+            // If there was an SQL error, throw it here.
+            if (err !== null) {
+                var sqlError = new Error("There was an SQL error.");
+                sqlError.name = "auth_db_sql_error";
+                sqlError.innerError = err;
+
+                return callback(sqlError);
+            }
+            
+            // Check for matches to revoked tokens
+            if (rows.length !== 0) {
+                var tokenRevokedError = new Error("This auth token " +
+                    "has been previously revoked");
+                tokenRevokedError.name = "auth_token_revoked";
+                tokenRevokedError.httpStatus = 403;
+
+                return callback(tokenRevokedError);
+            }
+
+            return callback(undefined, true);
+        }
 
 };
 
@@ -296,27 +306,7 @@ authModel.revokeToken = function(jwtToken, callback) {
                         'VALUES (?, ?)'
                     ].join(" "),
                     [jwtToken, Date.now()],
-                    function(err) {
-                        db.close();
-                        
-                        // If there was an SQL error, throw it here.
-                        if (err !== null) {
-                            var sqlError = new Error("There was an SQL error.");
-                            sqlError.name = "auth_db_sql_error";
-                            sqlError.innerError = err;
-                            return callback(sqlError);
-                        }
-                        
-                        // Check that we've had an affect
-                        if (this.changes !== 1) {
-                            var notRevokedError = new Error("The revocation " +
-                                "could not be added to the database.");
-                            notRevokedError.name = "auth_token_not_revoked";
-                            return callback(notRevokedError);
-                        }
-                        
-                        callback(undefined, true);
-                    }
+                    tokenRevokationInsertCallback
                 )
             })
             .on("error", function(err) {
@@ -326,6 +316,28 @@ authModel.revokeToken = function(jwtToken, callback) {
                 dbError.innerError = err;
                 return callback(dbError);
             });
+
+        function tokenRevokationInsertCallback (err) {
+            db.close();
+            
+            // If there was an SQL error, throw it here.
+            if (err !== null) {
+                var sqlError = new Error("There was an SQL error.");
+                sqlError.name = "auth_db_sql_error";
+                sqlError.innerError = err;
+                return callback(sqlError);
+            }
+            
+            // Check that we've had an affect
+            if (this.changes !== 1) {
+                var notRevokedError = new Error("The revocation " +
+                    "could not be added to the database.");
+                notRevokedError.name = "auth_token_not_revoked";
+                return callback(notRevokedError);
+            }
+            
+            callback(undefined, true);
+        }
     };
 
     // Use errors from authModel (uncaught here.);        
@@ -333,6 +345,7 @@ authModel.revokeToken = function(jwtToken, callback) {
         jwtToken,
         revokeToken
     );
+
 }
 
 /**
