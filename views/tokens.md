@@ -34,7 +34,7 @@ The highest access level is for authenticated consumers, who must supply both an
 
 #### Expected response
 
-The command will respond with a JWT character string of up to 200 characters. This character string must be included in the head of API calls that have an access level of 1 or more.
+The command will respond with a JWT character string with some properties encoded (it's best to assume that this is under 1KB, but there is no hard limit). This character string must be included in the head of API calls that have an access level of 1 or more.
 
 A JSON API compatible response will contain the authentication token.
 
@@ -51,10 +51,10 @@ A JSON API compatible response will contain the authentication token.
 
 Note: Please see the [standard errors](../errors) section for details of generic API errors.
 
-* `api_key_invalid` - The supplied `APIKey` attribute was not recognised as a valid API key.
-* `api_key_malformed` - The supplied `APIKey` attribute was not in the correct format (i.e., it does not contain the correct number of characters).
-* `secret_key_invalid` - The supplied `SecretKey` does not correspond to the `APIKey` attribute
-* `secret_key_malformed` - The supplied `SecretKey` does not correspond to the `APIKey` attribute
+* `HTTP/1.1 401`: `api_key_invalid` - The supplied `APIKey` attribute was not recognised as a valid API key.
+* `HTTP/1.1 400`: `api_key_malformed` - The supplied `APIKey` attribute was not in the correct format (i.e., it does not contain the correct number of characters).
+* `HTTP/1.1 401`: `secret_key_invalid` - The supplied `SecretKey` does not correspond to the `APIKey` attribute
+* `HTTP/1.1 400`: `secret_key_malformed` - The supplied `SecretKey` does not correspond to the `APIKey` attribute
 
 ### `GET` tokens [AccessLevel 3]
 Retrieves a list of authentication tokens that have been issued by the system. Please note that **whole tokens will not be retrieved**.
@@ -108,9 +108,9 @@ A list of tokens in use by the API server, both valid and invalid will be return
 
 Note: Please see the [standard errors](../errors) section for details of generic API errors.
 
-* `count_invalid` - The supplied `count` attribute was not a valid natural number or out of bounds.
-* `offset_invalid` - The supplied `offset` attribute was out of bounds.
-* `sort_malformed` - The server had difficulty parsing the sort order indicated. Check that the sort follows the specified conventions.
+* `HTTP/1.1 400`: `count_invalid` - The supplied `count` attribute was not a valid natural number or out of bounds.
+* `HTTP/1.1 400`: `offset_invalid` - The supplied `offset` attribute was out of bounds.
+* `HTTP/1.1 400`: `sort_malformed` - The server had difficulty parsing the sort order indicated. Check that the sort follows the specified conventions.
 
 ### `GET` tokens/:authentication-token [AccessLevel 1]
 
@@ -144,8 +144,8 @@ Details of the token will be returned regarding its validity.
 #### Method-specific errors
 Note: Please see the [standard errors](../errors) section for details of generic API errors.
 
-* `authentication_token_malformed` - A syntax error was present in the URL-supplied authorisation token.
-* `authentication_token_invalid` - The authentication token was not recognised by the system.
+* `HTTP/1.1 400`: `auth_token_malformed` - A syntax error was present in the URL-supplied authorisation token.
+* `HTTP/1.1 401`: `auth_token_invalid` - The authentication token was not recognised by the system.
 
 ### `DELETE` tokens/:authentication-token [AccessLevel 1]
 
@@ -184,5 +184,5 @@ Details of the token will be returned regarding its new status and a timestamp o
 #### Method-specific errors
 Note: Please see the [standard errors](../errors) section for details of generic API errors.
 
-* `authentication_token_malformed` - A syntax error was present in the URL-supplied authorisation token.
-* `authentication_token_invalid` - The authentication token was not recognised by the system.
+* `HTTP/1.1 400`: `auth_token_malformed` - A syntax error was present in the URL-supplied authorisation token.
+* `HTTP/1.1 401`: `auth_token_invalid` - The authentication token was not recognised by the system.
