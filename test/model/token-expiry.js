@@ -10,7 +10,7 @@
 module.exports = function(authModel, apiTestAccount, doneCallback) {
     var should = require('should');
     
-    it("Raise a aut_token_expired error when attempting to use an expired token", function(done) {
+    it("Raise a auth_token_expired error when attempting to use an expired token", function(done) {
         should(
             authModel.createToken(
                 undefined,

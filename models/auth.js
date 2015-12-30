@@ -133,8 +133,7 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
             )
         })
         .on("error", function(err) {
-            callback(err);
-            return;
+            return callback(err);
         });
 };
 
@@ -191,8 +190,7 @@ authModel.validateToken = function(jwtToken, callback) {
             + typeof(jwtToken) + " (expected string).";
         tokenError.name = "non_string_token";
         tokenError.httpStatus = 422;
-        callback(tokenError);
-        return;
+        return callback(tokenError);
     }
 
     // Check JWT integrity
@@ -203,8 +201,7 @@ authModel.validateToken = function(jwtToken, callback) {
             var validationError = new Error("The JWT string is invalid.");
             validationError.name = "auth_token_invalid";
             validationError.httpStatus = 422;
-            callback(validationError);
-            return;
+            return callback(validationError);
         }
     }
     
@@ -217,8 +214,7 @@ authModel.validateToken = function(jwtToken, callback) {
         var expiredError = new Error("This token has expired.");
         expiredError.name = "auth_token_expired";
         expiredError.httpStatus = 403;
-        callback(expiredError);
-        return;
+        return callback(expiredError);
     }
 
     var db = new sqlite.Database(config.database.file);
@@ -240,8 +236,8 @@ authModel.validateToken = function(jwtToken, callback) {
                         var sqlError = new Error("There was an SQL error.");
                         sqlError.name = "auth_db_sql_error";
                         sqlError.innerError = err;
-                        callback(sqlError);
-                        return;
+
+                        return callback(sqlError);
                     }
                     
                     // Check for matches to revoked tokens
@@ -249,12 +245,12 @@ authModel.validateToken = function(jwtToken, callback) {
                         var tokenRevokedError = new Error("This auth token " +
                             "has been previously revoked");
                         tokenRevokedError.name = "auth_token_revoked";
-                        callback(tokenRevokedError);
-                        return;
+                        tokenRevokedError.httpStatus = 403;
+
+                        return callback(tokenRevokedError);
                     }
 
-                    callback(undefined, true);
-                    return;
+                    return callback(undefined, true);
                 }
             )
         })
@@ -308,8 +304,7 @@ authModel.revokeToken = function(jwtToken, callback) {
                             var sqlError = new Error("There was an SQL error.");
                             sqlError.name = "auth_db_sql_error";
                             sqlError.innerError = err;
-                            callback(sqlError);
-                            return;
+                            return callback(sqlError);
                         }
                         
                         // Check that we've had an affect
@@ -317,8 +312,7 @@ authModel.revokeToken = function(jwtToken, callback) {
                             var notRevokedError = new Error("The revocation " +
                                 "could not be added to the database.");
                             notRevokedError.name = "auth_token_not_revoked";
-                            callback(notRevokedError);
-                            return;
+                            return callback(notRevokedError);
                         }
                         
                         callback(undefined, true);
@@ -330,8 +324,7 @@ authModel.revokeToken = function(jwtToken, callback) {
                     "the authentication database.");
                 dbError.name = "auth_db_connection_error";
                 dbError.innerError = err;
-                callback(dbError);
-                return;
+                return callback(dbError);
             });
     };
 

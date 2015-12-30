@@ -19,7 +19,7 @@ var authModel = require('../models/auth.js');
 
 router.use(
     function(req, res, next) {
-        var authToken = req.get('authenticationToken')
+        var authToken = req.get('auth-token')
                 || req.get('authentication-token'),
             authError = new Error();
 
@@ -28,6 +28,7 @@ router.use(
             authError.message = "There was no authentication token provided " +
                 "with this request.";
             authError.name = "auth_token_missing";
+            authError.httpStatus = 401;
 
             return next(authError);
         }
