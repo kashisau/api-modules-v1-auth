@@ -47,6 +47,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 authToken = authToken.join('.');
 
                 authModel.validateToken(authToken, function(err, result) {
+                    err.httpStatus.should.equal(401);
                     err.name.should.equal("auth_token_invalid");
                     done();
                 });
@@ -71,6 +72,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 authToken = authToken.join('.');
 
                 authModel.validateToken(authToken, function(err, result) {
+                    err.httpStatus.should.equal(401);
                     err.name.should.equal("auth_token_invalid");
                     done();
                 });
@@ -95,6 +97,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                 authToken = authToken.join('.');
 
                 authModel.validateToken(authToken, function(err, result) {
+                    err.httpStatus.should.equal(401);
                     err.name.should.equal("auth_token_invalid");
                     done();
                     doneCallback();

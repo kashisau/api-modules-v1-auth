@@ -25,6 +25,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             function (err, authToken) {
                 should.exist(err);
                 should.exist(err.name);
+                err.httpStatus.should.equal(400);
                 err.name.should.equal("api_key_malformed");
                 should.not.exist(authToken);
                 done();
@@ -44,6 +45,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             function (err, authToken) {
                 should.exist(err);
                 should.exist(err.name);
+                err.httpStatus.should.equal(401);
                 err.name.should.equal("api_key_invalid");
                 should.not.exist(authToken);
                 done();
@@ -63,6 +65,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
             function (err, authToken) {
                 should.exist(err);
                 should.exist(err.name);
+                err.httpStatus.should.equal(401);
                 err.name.should.equal("api_key_secret_mismatch");
                 should.not.exist(authToken);
                 done();

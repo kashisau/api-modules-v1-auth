@@ -123,6 +123,8 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
         if (rows.length === 0) {
             var noResultsError = new Error("There were zero rows" +
                 " matching the given API key.");
+
+            noResultsError.httpStatus = 401;
             noResultsError.name = "api_key_invalid";
             return callback(noResultsError);
         }
@@ -135,6 +137,8 @@ authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
             if (keyData.secret !== apiKeySecret) {
                 var keyMismatchError = new Error("There was a mismatch " + 
                     "the API key secret.");
+
+                keyMismatchError.httpStatus = 401;
                 keyMismatchError.name = "api_key_secret_mismatch";
                 return callback(keyMismatchError);
             }
@@ -169,7 +173,8 @@ authModel.validateApiKeySyntax = function(apiKey) {
     if (keyLength === KEY_LENGTH)
         if (/[a-zA-Z0-9]*/gi)
             return escapedKey;
-
+            
+    keyError.httpStatus = 400;
     keyError.name = "api_key_malformed";
     throw keyError;
 };
@@ -197,7 +202,7 @@ authModel.validateToken = function(jwtToken, callback) {
         tokenError.message = "The token provided was of type "
             + typeof(jwtToken) + " (expected string).";
         tokenError.name = "non_string_token";
-        tokenError.httpStatus = 422;
+        tokenError.httpStatus = 400;
         return callback(tokenError);
     }
 
@@ -208,7 +213,7 @@ authModel.validateToken = function(jwtToken, callback) {
         if (err.name === "JsonWebTokenError") {
             var validationError = new Error("The JWT string is invalid.");
             validationError.name = "auth_token_invalid";
-            validationError.httpStatus = 422;
+            validationError.httpStatus = 401;
             return callback(validationError);
         }
     }
@@ -221,7 +226,7 @@ authModel.validateToken = function(jwtToken, callback) {
     if (( ! payload.exp) || currentDate > payload.exp) {
         var expiredError = new Error("This token has expired.");
         expiredError.name = "auth_token_expired";
-        expiredError.httpStatus = 403;
+        expiredError.httpStatus = 401;
         return callback(expiredError);
     }
 
@@ -265,7 +270,7 @@ authModel.validateToken = function(jwtToken, callback) {
                 var tokenRevokedError = new Error("This auth token " +
                     "has been previously revoked");
                 tokenRevokedError.name = "auth_token_revoked";
-                tokenRevokedError.httpStatus = 403;
+                tokenRevokedError.httpStatus = 401;
 
                 return callback(tokenRevokedError);
             }
