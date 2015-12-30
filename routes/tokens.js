@@ -43,11 +43,11 @@ router
             );
         }
     })
-    .update('(.xml|.json)?', function(req, res, next) {
-        var authToken = req.cookies.authToken,
-            renewToken = req.cookies.renewToken;
+    // .update('(.xml|.json)?', function(req, res, next) {
+    //     var authToken = req.cookies.authToken,
+    //         renewToken = req.cookies.renewToken;
 
-    })
+    // })
     .delete('(.xml|.json)?/:token', function(req, res, next) {
         res.send("Invalidating YOUR TOKEN");
     });

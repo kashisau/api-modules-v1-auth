@@ -36,23 +36,24 @@ router.use(
         // Validate JWT
         authModel.validateToken(
             authToken,
-            function(err, resullt) {
-                if (err !== undefined) {
-                    err.httpStatus = 401;
-                    return next(err);
-                }
-
-                req.auth = req.auth || {};
-                
-                req.auth.token = authToken;
-                req.auth.tokenPayload = authModel.decodeToken(authToken);
-                
-                req.auth.functions = require('../models/auth-functions.js');
-        
-                return next();
-            }
+            tokenValidationCallback
         );
-        
+
+        function tokenValidationCallback (err, resullt) {
+            if (err !== undefined) {
+                err.httpStatus = 401;
+                return next(err);
+            }
+
+            req.auth = req.auth || {};
+            
+            req.auth.token = authToken;
+            req.auth.tokenPayload = authModel.decodeToken(authToken);
+            
+            req.auth.functions = require('../models/auth-functions.js');
+    
+            return next();
+        }
     }
 );
 
