@@ -8,7 +8,6 @@
  * @author Kashi Samaraweera <kashi@kashis.com.au>
  * @version 0.1.0
  */
-var aud = process.env.API_SERVER_AUDIENCE || 'http://localhost:8000';
 var authModel = require('../../models/auth.js');
 
 /**
@@ -20,13 +19,41 @@ var authModel = require('../../models/auth.js');
  * to API endpoints where pertinent.
  */
 function tokensPost(req, res, next) {
-    var apiKey = req.body['api-key'],
-        apiKeySecret = req.body['api-key-secret'];
-        
+    var apiKey = req.headers['api-key'],
+        apiKeySecret = req.headers['api-key-secret'];
+ 
     createRenewToken(apiKey, apiKeySecret)
         .then(renewAuthToken)
-        .then(bundleTokens)
-        .catch(tokenGenerationErrorRes);
+        .then(issueTokensResponse)
+        .catch(issueErrorResponse);
+
+    res.header('content-type', 'application/vnd.api+json');
+            
+    /**
+     * Uses the res object to issue a response to the client with the auth and
+     * renewal tokens in place.
+     */
+    function issueTokensResponse(tokens) {
+        res.json({
+            data : tokens
+        });
+    }
+    
+    /**
+     * Uses the res object to issue an error response to the client.
+     */
+    function issueErrorResponse(err) {
+        res.status(err.httpStatus);
+        var error = {
+            httpStatus: err.httpStatus,
+            name: err.name,
+            message: err.message
+        }
+        res.json({
+            errors : error
+        });
+    }
+
 }
 
 /**
@@ -46,7 +73,6 @@ function createRenewToken(apiKey, apiKeySecret) {
             authModel.createRenewToken(
                 apiKey,
                 apiKeySecret,
-                undefined,
                 createTokenCallback
             );
             
@@ -72,7 +98,10 @@ function renewAuthToken(renewToken) {
 
             function renewalCallback(err, token) {
                 if (err) return reject(err);
-                return resolve(token);
+                return resolve({
+                    auth: token,
+                    renew: renewToken
+                });
             }
             
         }

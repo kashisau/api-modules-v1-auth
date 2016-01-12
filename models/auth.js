@@ -8,8 +8,8 @@ var DEFAULT_RENEW_EXPIRY = 31536000; // 1 Year expiry for renewal tokens.
 var DEFAULT_AUTH_EXPIRY = 900; // 15 minute expiry for auth tokens.
 
 var KEY_LENGTH = 25;
-var TOKEN_AUDIENCE = (process.env.NODE_ENV==='DEVELOPMENT')? 
-    'https://localhost:3000' : process.env.API_SRV_ADDR;
+var TOKEN_AUDIENCE =  process.env.API_SRV_ADDR || 
+    'https://localhost:3000';
 
 var authModel = {};
 /**
@@ -23,12 +23,10 @@ var authModel = {};
  * @param {string} apiKeySecret (Optional) API key corresponding secret. If
  *                              supplied with the apiKey an authentication
  *                              token of accessLevel 2 will be issued.
- * @param {Date} expiry (Optional) server time at which the authentication
- *                      token will be invalidated.
  * @param {function} callback   A callback function that accepts the standard
  *                              params err, result.
  */
-authModel.createRenewToken = function(apiKey, apiKeySecret, expiry, callback) {
+authModel.createRenewToken = function(apiKey, apiKeySecret, callback) {
     var accessLevel = 0;
 
     if (apiKey !== undefined) {
@@ -108,7 +106,7 @@ function _createToken(apiKey, accessLevel, expiry, type, callback) {
         return callback(new Error("Invalid type. Supplied '" + type
             + "'"));
 
-    var jwtID = crypto.randoBytes(20).toString('hex'),
+    var jwtID = crypto.randomBytes(20).toString('hex'),
         currentTime = Date.now(),
         expiryTime = Date.now() + expiry * 1000,
         tokenString;
@@ -161,8 +159,11 @@ authModel.renewAuthToken = function(renewJwt, callback) {
         }
         
         // Check that the API key is still valid
-        authModel.validateApiKey(apiKey, apiKeyValidationCallback);
+        if (!!renewPayload.apiKey)
+            return authModel.validateApiKey(apiKey, undefined, apiKeyValidationCallback);
         
+        apiKeyValidationCallback(null, false);
+
         // Check to see that the API key is still valid, issue a token if so.
         function apiKeyValidationCallback(err, result) {
             if (err) return callback(err); // Invalid/revoked API key.
@@ -185,7 +186,7 @@ authModel.renewAuthToken = function(renewJwt, callback) {
                 tokenEncodeKey
             );
 
-            callback(null, newAuthToken);
+            return callback(null, newAuthToken);
         }
         
     }

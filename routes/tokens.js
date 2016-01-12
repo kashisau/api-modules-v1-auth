@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
+var path = require('path');
 var authModel = require('../models/auth.js');
 
 /**
@@ -19,23 +20,23 @@ router
      * The POST method will generate a new auth token AND renew token supplied
      * to the client using sinple JSON.
      */
-    .post('(.json)?', require('tokens/post.js'))
+    .post('(.json)?', require(path.join(__dirname, 'tokens/post.js')))
     /**
      * The GET method will validate an auth token for the requesting client,
      * supplying general information about the specified token.
      */
-    .get('(.json)?/:auth-token', require('tokens/get-token.js'))
+//    .get('(.json)?/:auth-token', require(path.join(__dirname, 'tokens/get-auth.js')))
     /**
      * Accepts a renewal token with which to issue a corresponding auth token.
      * The renewal token offered is used to determine the payload of the auth
      * token (after being validated, of course.)
      */
-    .put('(.json)?/:renew-token', require('tokens/put-token.js'))
+//    .put('(.json)?/:renew-token', require(path.join(__dirname, 'tokens/put-renew.js')))
     /**
      * Token revocation for the renwal token, invalidating that particular
      * token. Authentication tokens are not revoked (i.e. they are valid until
      * their point of expiry.)
      */
-    .delete('(.json)/:renew-token', require('tokens/delete-renew-token.js'));
+//    .delete('(.json)/:renew-token', require(path.join(__dirname, 'tokens/delete-renew.js')));
 
 module.exports = router;
