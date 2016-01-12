@@ -4,16 +4,18 @@ var jwt = require('jsonwebtoken');
 var config = require('../config/config.json');
 var tokenEncodeKey = config.jwtSigningKey;
 
-var DEFAULT_EXPIRY = 7200;
+var DEFAULT_RENEW_EXPIRY = 31536000; // 1 Year expiry for renewal tokens.
+var DEFAULT_AUTH_EXPIRY = 900; // 15 minute expiry for auth tokens.
+
 var KEY_LENGTH = 25;
-var TOKEN_AUDIENCE = 'https://localhost:3000/';
+var TOKEN_AUDIENCE = (process.env.NODE_ENV==='DEVELOPMENT')? 
+    'https://localhost:3000' : process.env.API_SRV_ADDR;
 
 var authModel = {};
 /**
- * Creates a new JavaScript Web token (JWT) and stores its initialisation data
- * in the token table within the database. This method takes optional API key
- * and corresponding secret information in order to generate a JWT with higher
- * accessLevels. Absent of these
+ * Creates a renewal token using the supplied parameters. Renewal tokens may be
+ * used to create authentication tokens (i.e., auth tokens cannot be created
+ * directly).
  * @param {string} apiKey   (Optional) API key to which the authentication
  *                          token should be associated. Supplying this without
  *                          the apiSecretKey will result in a token with
@@ -26,59 +28,168 @@ var authModel = {};
  * @param {function} callback   A callback function that accepts the standard
  *                              params err, result.
  */
-authModel.createToken = function(apiKey, apiKeySecret, expiry, callback) {
-    var accessLevel = 0,
-        expiry = expiry || DEFAULT_EXPIRY,
-        currentTime = Date.now(),
-        expiryTime = Date.now() + expiry * 1000;
-
+authModel.createRenewToken = function(apiKey, apiKeySecret, expiry, callback) {
+    var accessLevel = 0;
 
     if (apiKey !== undefined) {
-
         try {
             authModel.validateApiKeySyntax(apiKey);
         } catch(err) {
             return callback(err);
         }
-        authModel.validateApiKey(
+
+        return authModel.validateApiKey(
             apiKey,
             apiKeySecret,
             validateApiKeyCallback
         );
 
-    } else {
-
-        var jwtString = jwt.sign(
-            {
-                accessLevel: accessLevel,
-                aud: TOKEN_AUDIENCE,
-                iat: currentTime,
-                exp: expiryTime,
-                apiKey: apiKey
-            },
-            tokenEncodeKey
-        );
-
-        callback(undefined, jwtString);
     }
     
+    // No API key defined create a token with AccessLevel 0.
+    _createToken(
+        undefined,
+        0,
+        DEFAULT_RENEW_EXPIRY,
+        'renew',
+        issueToken
+    );
+    
+    // Handles the control flow if an API key was supplied.
     function validateApiKeyCallback (err, result) {
         if (err) return callback(err);
+        
         accessLevel = result.accessLevel;
-        var jwtString = jwt.sign(
-            {
-                accessLevel: accessLevel,
-                aud: TOKEN_AUDIENCE,
-                iat: currentTime,
-                exp: expiryTime,
-                apiKey: apiKey
-            },
-            tokenEncodeKey
-        );
+        // API key validated, create a token with AccessLevel 1.
 
-        callback(undefined, jwtString);
+        _createToken(
+            apiKey,
+            accessLevel,
+            DEFAULT_RENEW_EXPIRY,
+            'renew',
+            issueToken
+        );
+    }
+    
+    // Calls the original callback once a token has been generated.
+    function issueToken(err, jwtString) {
+        if (err) return callback(err);
+        return callback(null, jwtString);
     }
 };
+
+/**
+ * Creates a new JWT string that acts as an authentication token or renewal
+ * token, depending on its type. Authentication tokens have a short-lived life-
+ * span and not checked for revocation in a typical workflow, whereas renewal
+ * tokens are less commonly used and thus compared against a revocation list.
+ * This is not a public method as it is quite powerful (i.e., any type of token
+ * may be created) however there's a lot of commonality between auth and renew
+ * token generation thus the single method exists.
+ * @param {string} apiKey   (Optional) API key against which the token will be
+ *                          created (for tracability).
+ * @param {number} accessLevel  The access level of the token being
+ *                              created.
+ * @param {number} expiry   The duration (in seconds from now) for which the
+ *                          token should be valid.
+ * @param {string} type The type of token being generated (i.e., 'auth' for an
+ *                      authentication token, 'renew' for a renewal token.)
+ * @param {function(err, token)} callback   A callback function to apply once
+ *                                          an error has occurred or the token
+ *                                          is ready.
+ * @private
+ */
+function _createToken(apiKey, accessLevel, expiry, type, callback) {
+    if (isNaN(accessLevel))
+        return callback(new Error("Invalid accessLevel (NaN)"));
+    if (isNaN(expiry) || !expiry)
+        return callback(new Error("Invalid expiry (NaN)."));
+    if (['auth', 'renew'].indexOf(type) === -1)
+        return callback(new Error("Invalid type. Supplied '" + type
+            + "'"));
+
+    var jwtID = crypto.randoBytes(20).toString('hex'),
+        currentTime = Date.now(),
+        expiryTime = Date.now() + expiry * 1000,
+        tokenString;
+
+    tokenString = jwt.sign(
+        {
+            accessLevel: accessLevel,
+            type: type,
+            jti: jwtID,
+            aud: TOKEN_AUDIENCE,
+            nbf: currentTime,
+            iat: currentTime,
+            exp: expiryTime,
+            apiKey: apiKey
+        },
+        tokenEncodeKey
+    );
+    
+    callback(null, tokenString);
+}
+
+/**
+ * Creates an authentication token from an existing renew token, copying the
+ * relevant properties across. This method will validate the renewal token
+ * before use.
+ * @param {string} renewJwt The JWT-string containing the renewal token.
+ * @oaram {function} callback   A callback function to execute once the renewal
+ *                              token is ready.
+ */
+authModel.renewAuthToken = function(renewJwt, callback) {
+    authModel.validateToken(renewJwt, transferRenewToken);
+    
+    function transferRenewToken(err, result) {
+        if (err) return callback(err);
+        
+        var renewPayload = authModel.decodeToken(renewJwt),
+            apiKey = renewPayload.apiKey,
+            type = renewPayload.type;
+        
+        // Check that the user is using an actual renewal token.
+        if (type !== "renew") {
+            var wrongTokenError = new Error("The token used for renewal must "
+                + "be the correct type (renewal token expected, "
+                + type + "found.)");
+
+            wrongTokenError.name = "auth_renewal_wrong_token_type";
+            wrongTokenError.httpStatus = 400;
+            
+            return callback(wrongTokenError);
+        }
+        
+        // Check that the API key is still valid
+        authModel.validateApiKey(apiKey, apiKeyValidationCallback);
+        
+        // Check to see that the API key is still valid, issue a token if so.
+        function apiKeyValidationCallback(err, result) {
+            if (err) return callback(err); // Invalid/revoked API key.
+
+            var currentTime = Date.now(),
+                expiryTime = Date.now() + DEFAULT_AUTH_EXPIRY * 1000;
+
+            // Re-use the renew payload properties, changing a few attributes:
+            var newAuthToken = jwt.sign(
+                {
+                    accessLevel: renewPayload.accessLevel,
+                    type: 'auth',
+                    renewJti: renewPayload.jti,
+                    aud: renewPayload.aud,
+                    nbf: currentTime,
+                    iat: currentTime,
+                    exp: expiryTime,
+                    apiKey: apiKey
+                },
+                tokenEncodeKey
+            );
+
+            callback(null, newAuthToken);
+        }
+        
+    }
+}
 
 /**
  * Checks that the supplied key, secret key pair in order to assess validity.
@@ -198,10 +309,10 @@ authModel.validateToken = function(jwtToken, callback) {
         tokenVerification;
 
     // Check syntax
-    if (typeof(jwtToken) !== "string") {
+    if (typeof(jwtToken) === "undefined") {
         tokenError.message = "The token provided was of type "
             + typeof(jwtToken) + " (expected string).";
-        tokenError.name = "non_string_token";
+        tokenError.name = "auth_token_missing";
         tokenError.httpStatus = 400;
         return callback(tokenError);
     }
@@ -229,6 +340,10 @@ authModel.validateToken = function(jwtToken, callback) {
         expiredError.httpStatus = 401;
         return callback(expiredError);
     }
+
+    // Auth tokens aren't checked for revocation (only renew tokens).
+    if (payload.type === "auth")
+        return callback(null, true);
 
     var db = new sqlite.Database(config.database.file);
     
