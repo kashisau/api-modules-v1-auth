@@ -15,8 +15,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
     it("Validate a valid token with AccessLevel 0", function (done) {
         var jwtString;
 
-        jwtString = authModel.createToken(
-            undefined,
+        jwtString = authModel.createRenewToken(
             undefined,
             undefined,
             function (err, authToken) {
@@ -34,9 +33,8 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
     it("Validate a valid token with AccessLevel 1", function (done) {
         var jwtString;
 
-        jwtString = authModel.createToken(
+        jwtString = authModel.createRenewToken(
             apiTestAccount.key,
-            undefined,
             undefined,
             function (err, authToken) {
                 authToken.should.be.a.string;
@@ -54,10 +52,9 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
     it("Validate a valid token with AccessLevel 2", function (done) {
         var jwtString;
 
-        jwtString = authModel.createToken(
+        jwtString = authModel.createRenewToken(
             apiTestAccount.key,
             apiTestAccount.secret,
-            undefined,
             function (err, authToken) {
                 authToken.should.be.a.string;
                 var authTokenPayload = authModel.decodeToken(authToken);

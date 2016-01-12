@@ -4,8 +4,8 @@ var jwt = require('jsonwebtoken');
 var config = require('../config/config.json');
 var tokenEncodeKey = config.jwtSigningKey;
 
-var DEFAULT_RENEW_EXPIRY = 31536000; // 1 Year expiry for renewal tokens.
-var DEFAULT_AUTH_EXPIRY = 900; // 15 minute expiry for auth tokens.
+var DEFAULT_RENEW_EXPIRY = 3600 * 24 * 365 * 2; // 1 Year expiry
+var DEFAULT_AUTH_EXPIRY = 60 * 15; // 15 minute expiry
 
 var KEY_LENGTH = 25;
 var TOKEN_AUDIENCE =  process.env.API_SRV_ADDR || 

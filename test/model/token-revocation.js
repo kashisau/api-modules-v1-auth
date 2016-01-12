@@ -12,8 +12,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
     
     it("Raise a auth_token_revoked error when attempting to use a revoked token", function(done) {
         should(
-            authModel.createToken(
-                undefined,
+            authModel.createRenewToken(
                 undefined,
                 undefined,
                 function(err, authToken) {
