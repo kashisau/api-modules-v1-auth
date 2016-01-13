@@ -1,17 +1,17 @@
 # Tokens methods
 ## Auth module
 
-The Tokens method handles the issuing, validation and revocation of authentication tokens that are used by the API server. The API server will track all authentication tokens that have been issued and keep a record of activity for each one.
+The Tokens method handles the issuing, validation and revocation of authentication tokens that are used by the API server. The two types of authentication tokens (`auth` and `renew`) are documented on the [Auth module page](../).
 
 ## Methods
 
 ### `POST` tokens [AccessLevel 0]
 
-Used to request a new authentication token got use with API modules. Authentication tokens vary in [access level](../../#Authorisation) depending on the data provided during creation.
+Used to request a new `renew` and `auth` token pair for use with all API methods on the API server. Authentication tokens vary in [access level](../../#Authorisation) depending on the data provided during creation.
 
 #### Required attributes
 
-There are no mandatory attributes required to create an authentication token of access level 1. If no post information is supplied, then a new token of access level 1 will be provided.
+There are no mandatory attributes required to create an authentication token of access level 0. If no post information is supplied, then a `renew` and `auth` token pair access level 0 will be provided.
 
 | Property | Value(s) | Description |
 |----------|----------|-------------|
@@ -19,30 +19,30 @@ There are no mandatory attributes required to create an authentication token of 
 
 #### Optional attributes
 
-There are three access levels that an authentication token may posses. The following set of attributes must be supplied for access level 2.
+There are three access levels that an authentication token may posses. The following set of attributes must be supplied for access level 1. These must be supplied in HTTP request headers, with key names matching identically.
 
 | Attribute | Value(s)             | Description                                                                                                                              |
 | --------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| apiKey    | `<your API key>`     | The API key that has been issued to identify an individual account  holder. This is merely used to identify the user of the api service. |
+| api-key    | `<your API key>`     | The API key that has been issued to identify an individual account  holder. This is merely used to identify the user of the api service. |
 
-The highest access level is for authenticated consumers, who must supply both an API key and the correseponding secret key. This will generate an authentication token with access level 3.
+The highest access level is for authenticated consumers, who must supply both an API key and the correseponding secret key. This will generate an authentication token with access level 2. These must be supplied in HTTP request headers, with key names matching identically.
 
 | Attribute | Value(s)                     | Description                                                                                                                              |
 | --------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| apiKey    | `<your API key>`             | The API key that has been issued to identify an individual account  holder. This is merely used to identify the user of the api service. |
-| secretKey | `<corresponding secret key>` | The secret key that corresponds to the supplied APIKey                                                                                   |
+| api-key    | `<your API key>`             | The API key that has been issued to identify an individual account  holder. This is merely used to identify the user of the api service. |
+| api-key-secret | `<corresponding secret key>` | The secret key that corresponds to the supplied APIKey                                                                                   |
 
 #### Expected response
 
-The command will respond with a JWT character string with some properties encoded (it's best to assume that this is under 1KB, but there is no hard limit). This character string must be included in the head of API calls that have an access level of 1 or more.
+The command will respond with a JWT character string with some properties encoded (it is best to assume that this is under 1KB, but there is no hard limit). This character string must be included in the head of API calls that have an access level of 1 or more.
 
 A JSON API compatible response will contain the authentication token.
 
 ``` json
 {
   "data": {
-    "authenticationToken" : "aaaaa.bbbbb.ccccc",
-    "expirySeconds" : 7200
+    "renew" : "aaaaa.bbbbb.ccccc",
+    "auth" : "zzzzz.yyyyy.xxxxx"
   }
 }
 ```
@@ -56,14 +56,14 @@ Note: Please see the [standard errors](../errors) section for details of generic
 * `HTTP/1.1 401`: `secret_key_invalid` - The supplied `SecretKey` does not correspond to the `APIKey` attribute
 * `HTTP/1.1 400`: `secret_key_malformed` - The supplied `SecretKey` does not correspond to the `APIKey` attribute
 
-### `GET` tokens [AccessLevel 3]
+### `GET` tokens [AccessLevel 2]
 Retrieves a list of authentication tokens that have been issued by the system. Please note that **whole tokens will not be retrieved**.
 
 #### Required attributes
 
 | Attribute           | Value(s)                 | Description                                       |
 | ------------------- | ------------------------ | ------------------------------------------------- |
-| authenticationToken | `<authentication token>` | A valid authentication token with access level 3. |
+| `Authorization` | `Bearer <authentication token>` | A valid authentication token with access level 3. |
 
 #### Optional attributes
 
@@ -77,13 +77,14 @@ Retrieves a list of authentication tokens that have been issued by the system. P
 
 A list of tokens in use by the API server, both valid and invalid will be returned. They will adhere to the following structure:
 
-```
+```json
 {
   "data": {
     "authenticationTokens" : [
       {
         "authenticationToken" : "aa***.*****.****cc",
         "apiKey" : "abcd***********f",
+        "type": "renew",
         "secretKey" : null,
         "expirySeconds" : 1252
       },
@@ -91,6 +92,7 @@ A list of tokens in use by the API server, both valid and invalid will be return
         "authenticationToken" : "bb***.*****.****dd",
         "apiKey" : "abcd***********f",
         "secretKey" : null,
+        "type": "renew",
         "expirySeconds" : 1532
       },
       ...
@@ -98,6 +100,7 @@ A list of tokens in use by the API server, both valid and invalid will be return
         "authenticationToken" : "yy***.*****.****zz",
         "apiKey" : "abcd***********f",
         "secretKey" : null,
+        "type": "renew",
         "expirySeconds" : -1235
       },
     ]
@@ -132,7 +135,7 @@ There are optional attributes for this method.
 
 #### Expected response
 Details of the token will be returned regarding its validity.
-```
+```json
 {
   "data": {
     "status": "expired",
@@ -171,7 +174,7 @@ There are optional attributes for this method that override the required attribu
 
 #### Expected response
 Details of the token will be returned regarding its new status and a timestamp of its invalidation.
-```
+```json
 {
   "data": {
     "authenticationToken": "aaaa.bbbb.cccc",
