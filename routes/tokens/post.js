@@ -44,11 +44,13 @@ function tokensPost(req, res, next) {
      */
     function issueErrorResponse(err) {
         res.status(err.httpStatus);
-        var error = {
+        var error = [{
             httpStatus: err.httpStatus,
             name: err.name,
             message: err.message
-        }
+        }];
+        
+        
         res.json({
             errors : error
         });
