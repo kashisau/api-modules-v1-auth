@@ -31,7 +31,7 @@ router
      * The renewal token offered is used to determine the payload of the auth
      * token (after being validated, of course.)
      */
-//    .put('(.json)?/:renew-token', require(path.join(__dirname, 'tokens/put-renew.js')))
+    .put('(.json)?', require(path.join(__dirname, 'tokens/put-renew.js')))
     /**
      * Token revocation for the renwal token, invalidating that particular
      * token. Authentication tokens are not revoked (i.e. they are valid until

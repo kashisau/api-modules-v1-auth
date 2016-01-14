@@ -19,12 +19,12 @@ var authModel = require('../models/auth.js');
 
 router.use(
     function(req, res, next) {
-        var authToken = req.get('auth-token')
-                || req.get('authentication-token'),
+        var authHeader = req.headers['authorization'],
+            authToken,
             authError = new Error();
 
         // Check for JWT
-        if (typeof(authToken) === "undefined") {
+        if (typeof(authHeader) === "undefined") {
             authError.message = "There was no authentication token provided " +
                 "with this request.";
             authError.name = "auth_token_missing";
@@ -32,6 +32,12 @@ router.use(
 
             return next(authError);
         }
+        
+        // Extract the JWT from the Authorisation header.
+        authToken = authHeader
+            .split("Bearer ")
+            .filter((x) => x.length)
+            .join("");
         
         // Validate JWT
         authModel.validateToken(
