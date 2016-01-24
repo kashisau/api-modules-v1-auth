@@ -87,9 +87,8 @@ function validateToken(tokenString) {
             
             function tokenValidationCallback(err, token) {
                 if (err) return reject(err);
+                return resolve(tokenString);
             }
-                
-            return resolve(tokenString);
         }
     );
 }

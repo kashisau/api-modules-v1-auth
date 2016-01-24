@@ -31,6 +31,7 @@ function tokenRefresh(req, res, next) {
     function issueAuthToken(authToken) {
         res.json({
             data : {
+                renew: req.auth.token,
                 auth: authToken
             }
         });

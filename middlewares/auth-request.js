@@ -46,7 +46,7 @@ router.use(
         );
 
         function tokenValidationCallback (err, resullt) {
-            if (err !== undefined) {
+            if (err) {
                 err.httpStatus = 401;
                 return next(err);
             }
