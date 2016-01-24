@@ -3,7 +3,6 @@ var router = express.Router();
 var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
 var path = require('path');
-var authModel = require('../models/auth.js');
 
 /**
  * Authentication module routing
@@ -25,7 +24,7 @@ router
      * The GET method will validate an auth token for the requesting client,
      * supplying general information about the specified token.
      */
-//    .get('(.json)?/:auth-token', require(path.join(__dirname, 'tokens/get-auth.js')))
+    .get('/(:token)?(.json)?', require(path.join(__dirname, 'tokens/get-auth.js')))
     /**
      * Accepts a renewal token with which to issue a corresponding auth token.
      * The renewal token offered is used to determine the payload of the auth
