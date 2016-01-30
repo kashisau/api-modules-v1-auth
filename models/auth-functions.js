@@ -28,7 +28,8 @@ var authFunctions = (function() {
     authReqAPI.minAccessLevel = function(requiredAccessLevel, req, res, next) {
         var auth = req.auth,
             authToken = req.auth.tokenPayload || false,
-            tokenAccessLevel = authToken.accessLevel ||-1;
+            tokenAccessLevel =  isNaN(authToken.accessLevel)? -1
+                : authToken.accessLevel;
         
         if (requiredAccessLevel <= tokenAccessLevel) return true;
         

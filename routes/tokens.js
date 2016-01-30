@@ -1,41 +1,42 @@
-var express = require('express');
-var router = express.Router();
-var crypto = require('crypto');
-var jwt = require('jsonwebtoken');
-var path = require('path');
-
 /**
- * Authentication module routing
+ * Authentication module token method routing
  * 
  * An Express router that handles requests to the authentication module of the
- * API. This object uses the authentication model to process requests and acts
- * largely as a controller.
- * 
- * This implementation uses cookies to set and retrieve authentication tokens,
- * meaning that clients are unable to provide arbitrary tokens for requests.
+ * API. The `token` methods of the Authentication module are directed to their
+ * respective route handlers here.
+ *
+ * @author Kashi Samaraweera <kashi@kashis.com.au>
+ * @version 0.1.0
  */
+
+var express = require('express');
+var path = require('path');
+var router = express.Router();
+
 router
     /**
      * The POST method will generate a new auth token AND renew token supplied
      * to the client using sinple JSON.
      */
-    .post('(.json)?', require(path.join(__dirname, 'tokens/post.js')))
+    .post('', require(path.join(__dirname, 'tokens/post-create.js')))
     /**
      * The GET method will validate an auth token for the requesting client,
      * supplying general information about the specified token.
      */
-    .get('/(:token)?(.json)?', require(path.join(__dirname, 'tokens/get-auth.js')))
+    .get('/:token', require(path.join(__dirname, 'tokens/get-verify.js')))
     /**
      * Accepts a renewal token with which to issue a corresponding auth token.
      * The renewal token offered is used to determine the payload of the auth
      * token (after being validated, of course.)
      */
-    .put('(.json)?', require(path.join(__dirname, 'tokens/put-renew.js')))
+    .put('', require(path.join(__dirname, 'tokens/put-renew.js')))
     /**
      * Token revocation for the renwal token, invalidating that particular
      * token. Authentication tokens are not revoked (i.e. they are valid until
      * their point of expiry.)
      */
-//    .delete('(.json)/:renew-token', require(path.join(__dirname, 'tokens/delete-renew.js')));
+    .delete('/:token',
+        require(path.join(__dirname, 'tokens/delete-renew-token.js'))
+    );
 
 module.exports = router;

@@ -383,9 +383,9 @@ authModel.validateToken = function(jwtToken, callback) {
             
             // Check for matches to revoked tokens
             if (rows.length !== 0) {
-                var tokenRevokedError = new Error("This auth token " +
+                var tokenRevokedError = new Error("This token " +
                     "has been previously revoked");
-                tokenRevokedError.name = "auth_token_revoked";
+                tokenRevokedError.name = "renew_token_revoked";
                 tokenRevokedError.httpStatus = 401;
 
                 return callback(tokenRevokedError);
