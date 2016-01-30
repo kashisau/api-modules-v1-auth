@@ -103,7 +103,7 @@ function validateRenewToken(renewToken) {
 }
 
 /**
- * Issues a Promise that fulfils the revokation using the authentication model
+ * Issues a Promise that fulfils the revocation using the authentication model
  * @param {string}  The renew token from which the auth token should be issued.
  * @return {Promise}    Returns a Promise object that will issue a token or
  *                      report an error on completion.
