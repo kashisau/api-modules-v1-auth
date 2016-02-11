@@ -1,11 +1,28 @@
 {
-  "name": "website-api-module-auth",
-  "version": "0.0.5",
-  "description": "The authentication module for Kashi's website API.",
-  "author": "Kashi Samaraweera <kashi@kashis.com.au>",
+  "name": "@kashis/api-modules-v1-auth",
+  "version": "0.7.0",
+  "description": "A core module of Kashi's API Server that manages authentication for HTTP requests. This API module requires @kashi/api-server version 0.1.0 or greater.",
+  "homepage": "https://api.kashis.com.au/v1/auth/",
+  "licence": "Apache-2.0",
+  "keywords": [ 
+    "Kashi", 
+    "Samaraweera", 
+    "personal website", 
+    "portfolio", 
+    "authentication", 
+    "jwt", 
+    "token", 
+    "REST",
+    "@kashis/api-server" 
+  ],
+  "author": {
+      "name": "Kashi Samaraweera",
+      "email": "kashi@kashis.com.au",
+      "url": "https://kashis.com.au/"
+  },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/kashisau/api-modules-v1-auth"
   },
   "dependencies": {
     "crypto": "*",
@@ -19,6 +36,5 @@
   "scripts": {
     "test": "node_modules/.bin/mocha",
     "postinstall": "node install/postinstall.js"
-  },
-  "license": "MIT"
+  }
 }
