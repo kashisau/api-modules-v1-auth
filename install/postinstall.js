@@ -14,6 +14,11 @@
 var dotenv = require("dotenv");
 var db;
 
+var Mocha = require('mocha'),
+    fs = require('fs'),
+    path = require('path');
+
+
 /**
  * Top-level task runner for installation.
  */
@@ -22,12 +27,18 @@ function _init() {
     dotenv.config({silent: true});
     
     db = require("./database.js");    
-    db()
-        .then(runTests);
+    
+    db().catch(dbError).then((s,j) => process.exit(+s));
 }
 
-function runTests(params) {
-    console.log("running tests.");
+/**
+ * Reports an error in the initalisation of the sqlite database.
+ */
+function dbError(err) {
+    return new Promise((resolve, reject) => {
+       console.error("Error initialising database: ", err);
+       resolve(1);
+    });
 }
 
 _init();

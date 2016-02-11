@@ -102,13 +102,13 @@ function createDB(db) {
         
         db.exec(
             "\
-            CREATE TABLE `token_revoked` (\
+            CREATE TABLE IF NOT EXISTS `token_revoked` (\
                 `token`	TEXT NOT NULL UNIQUE,\
                 `date`	INTEGER NOT NULL,\
                 `jti`	TEXT NOT NULL UNIQUE,\
                 PRIMARY KEY(token)\
             );\
-            CREATE TABLE `api_key` (\
+            CREATE TABLE IF NOT EXISTS `api_key` (\
                 `key`	TEXT NOT NULL UNIQUE,\
                 `secret`	TEXT NOT NULL UNIQUE,\
                 `status`	TEXT DEFAULT 'UNINTIALISED',\
