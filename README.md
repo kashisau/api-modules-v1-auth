@@ -1,5 +1,5 @@
 # Authentication module
-## Requires website API
+[![Build Status](https://travis-ci.org/kashisau/api-modules-v1-auth.svg?branch=master)](https://travis-ci.org/kashisau/api-modules-v1-auth)
 Previously integrated into the source of [Kashi's API server](https://github.com/kashisau/api-server), this module is responsible for the authentication microservice. This module requires the API server to function, however is discretely testable without it.
 
 Currently implemented is [JWT-based](http://jwt.io) token issuance as well as middleware used by Express to authenticate requests to the API server. The middleware is capable of authenticating JWT strings so that requests can be validated.
