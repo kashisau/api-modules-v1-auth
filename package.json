@@ -3,7 +3,7 @@
   "version": "0.7.0",
   "description": "A core module of Kashi's API Server that manages authentication for HTTP requests. This API module requires @kashi/api-server version 0.1.0 or greater.",
   "homepage": "https://api.kashis.com.au/v1/auth/",
-  "licence": "Apache-2.0",
+  "license": "Apache-2.0",
   "keywords": [ 
     "Kashi", 
     "Samaraweera", 
