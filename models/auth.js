@@ -1,8 +1,15 @@
-var crypto = require('crypto');
-var sqlite = require('sqlite3');
-var jwt = require('jsonwebtoken');
-var config = require('../config/config.json');
-var tokenEncodeKey = config.jwtSigningKey;
+var crypto = require("crypto");
+var sqlite = require("sqlite3");
+var jwt = require("jsonwebtoken");
+var path = require("path");
+
+var dotenv = require("dotenv");
+
+dotenv.config({path: "./.env.example", silent: true});
+dotenv.config({silent: true});
+
+var tokenEncodeKey = process.env.AUTHV1_JWT_KEY;
+var dbFilepath = path.join(__dirname, "../", process.env.AUTHV1_DB_FILE);
 
 var DEFAULT_RENEW_EXPIRY = 3600 * 24 * 365 * 2; // 1 Year expiry
 var DEFAULT_AUTH_EXPIRY = 60 * 15; // 15 minute expiry
@@ -207,7 +214,7 @@ authModel.renewAuthToken = function(renewJwt, callback) {
  *                  of the database entries.
  */
 authModel.validateApiKey = function(apiKey, apiKeySecret, callback) {
-    var db = new sqlite.Database(config.database.file);
+    var db = new sqlite.Database(dbFilepath);
 
     db
         .on("open", function() {
@@ -346,7 +353,7 @@ authModel.validateToken = function(jwtToken, callback) {
     if (payload.type === "auth")
         return callback(null, true);
 
-    var db = new sqlite.Database(config.database.file);
+    var db = new sqlite.Database(dbFilepath);
     
     // Check revocation
     db
@@ -416,17 +423,18 @@ authModel.revokeToken = function(jwtToken, callback) {
         if (err !== undefined) return callback(err);
 
         // Continues if there were no issues so far.
-        var db = new sqlite.Database(config.database.file);
-    
+        var db = new sqlite.Database(dbFilepath),
+            payload = authModel.decodeToken(jwtToken);
+        
         db
             .on("open", function() {
                 db.run(
                     [
                         'INSERT INTO token_revoked',
-                        '(token, date)',
-                        'VALUES (?, ?)'
+                        '(token, date, jti)',
+                        'VALUES (?, ?, ?)'
                     ].join(" "),
-                    [jwtToken, Date.now()],
+                    [jwtToken, Date.now(), payload.jti],
                     tokenRevokationInsertCallback
                 )
             })

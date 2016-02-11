@@ -12,7 +12,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
     var path = require('path');
     var jwt = require('jsonwebtoken');
     var crypto = require('crypto');
-    var signingKey = require(path.join(__dirname, '../../config/config.json')).jwtSigningKey;
+    var signingKey = process.env.AUTHV1_JWT_KEY;
     
     var TOKEN_AUDIENCE =  process.env.API_SRV_ADDR || 'https://localhost:3000';
     

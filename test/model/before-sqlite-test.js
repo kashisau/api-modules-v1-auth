@@ -27,11 +27,7 @@ module.exports = function(apiTestAccount, dbConfig, doneCallback) {
                 should(err).be.null;
                 this.changes.should.be.equal(1);
                 this.lastID.should.be.a.number;
-                doneCallback((() => {
-                    var e = new Error("Environment variable issue");
-                    e.name = "auth_env_not_set";
-                    return e;
-                })());
+                doneCallback();
             }
         );
     });

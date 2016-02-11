@@ -25,10 +25,10 @@ var Mocha = require('mocha'),
 function _init() {
     dotenv.config({path: "./.env.example", silent: true});
     dotenv.config({silent: true});
-    
+
     db = require("./database.js");    
-    
-    db().catch(dbError).then((s,j) => process.exit(+s));
+
+    db().catch(dbError).then((s,j) => process.exit(s === 1? 1 : 0));
 }
 
 /**

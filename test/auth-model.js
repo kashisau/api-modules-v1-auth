@@ -14,6 +14,15 @@
  */
 describe('Authentication model', function() {
 
+    var dotenv = require("dotenv");
+
+    dotenv.config({path: "./.env.example", silent: true});
+    dotenv.config({silent: true});
+
+    var DB_FILE = process.env.AUTHV1_DB_FILE;
+    var path = require("path");
+
+
     var rnd = function(s, len) {
         // Bit of code golf, (because it always helps to harden one's
         // knowledge of functional behaviour. Also, I'm technically on a
@@ -36,12 +45,15 @@ describe('Authentication model', function() {
             // Yes - return the resultant string and fly up the stack
             : s
         },
+        dbFilePath = path.join(__dirname, "../", DB_FILE),
         authModel = require('../models/auth.js'),
         testAccount = {
             key: rnd(),
             secret: rnd()
         },
-        dbConfig = require('../config/config.json').database;
+        dbConfig = {
+            file: dbFilePath
+        };
 
     before(function (done) {
         require('./model/before-sqlite-test.js')(testAccount, dbConfig, done);
