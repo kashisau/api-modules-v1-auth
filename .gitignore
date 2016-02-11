@@ -1,6 +1,5 @@
 /node_modules/
-/config
-!/config/**/*.sample.*
 .idea
 .vscode
 /data
+.env

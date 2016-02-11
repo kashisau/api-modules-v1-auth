@@ -1,6 +1,0 @@
-{
-  "database": {
-    "file" : "data/auth.sqlite"
-  },
-  "jwtSigningKey": "<The secret key by which the JWT token is signed & verified.>"
-}

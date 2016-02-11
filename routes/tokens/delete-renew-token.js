@@ -144,12 +144,12 @@ function confirmRevocation(invalidatedRenewToken) {
             function invalidatedCallback(err, token) {
                 if ( ! err) {
                     return reject(
-                        () => {
+                        (() => {
                             var e = new Error("Token still validates.");
                             e.httpStatus = 500;
                             e.name = "renew_token_not_revoked";
                             return e;
-                        }
+                        })()
                     );
                 }
                 if (err.name !== "renew_token_revoked") return reject(err);

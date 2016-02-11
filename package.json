@@ -12,10 +12,13 @@
     "sqlite3": "*",
     "jsonwebtoken": "*",
     "mocha": "*",
-    "should": "*"
+    "should": "*",
+    "dotenv-safe": "*",
+    "fs-extra": "*"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha -w"
+    "test": "node_modules/.bin/mocha",
+    "postinstall": "node install/postinstall.js"
   },
   "license": "MIT"
 }

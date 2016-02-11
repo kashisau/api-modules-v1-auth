@@ -28,7 +28,7 @@ module.exports = function(authModel, apiTestAccount, doneCallback) {
                                 function(err, result) {
                                     should(err).be.an.object;
                                     err.httpStatus.should.equal(401);
-                                    err.name.should.equal('auth_token_revoked');
+                                    err.name.should.equal('renew_token_revoked');
                                     done();
                                 }
                             );
